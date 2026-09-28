@@ -1,0 +1,10 @@
+{
+  "name": "notext",
+  "version": "0.1.0",
+  "description": "Simple text translator designed for learning text",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "license": "MIT"
+}
