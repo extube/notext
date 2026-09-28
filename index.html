@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>notext :: read &amp; translate to learn</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="tui">
+
+    <header class="box header">
+      <pre class="logo" aria-hidden="true">█▄ █ ▄▀▄ ▄▀▀ █▄▀ █ ▄▀▀
+█ ▀█ █▀█ ▀▄▄ █ █ █ ▀▄▄</pre>
+      <div class="header-info">
+        <div>notext v0.1.0 :: read &amp; translate to learn</div>
+        <div class="dim">no backend &middot; text parsed to json locally<span class="cursor"></span></div>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <section class="box" id="input-box">
+        <div class="box-title">[ input ]</div>
+        <form id="text-form" novalidate>
+          <div class="field-row">
+            <label for="field-title">title</label>
+            <input type="text" id="field-title" placeholder="text title" autocomplete="off">
+          </div>
+
+          <div class="field-row">
+            <label for="field-date">date</label>
+            <input type="date" id="field-date">
+          </div>
+
+          <div class="field-row">
+            <label for="field-language">language</label>
+            <select id="field-language">
+              <option value="" selected disabled>[ select language ]</option>
+              <option value="ru">Russian</option>
+              <option value="fr">French</option>
+              <option value="en-GB">English (UK)</option>
+              <option value="en-US">English (US)</option>
+              <option value="es">Spanish</option>
+              <option value="it">Italian</option>
+              <option value="de">German</option>
+            </select>
+          </div>
+
+          <div class="field-row top">
+            <label for="field-text">text</label>
+            <textarea id="field-text" spellcheck="false"
+              placeholder="&gt; type or paste text here&hellip;&#10;&gt; separate parts with a blank line"></textarea>
+          </div>
+
+          <div class="button-row">
+            <button type="submit" class="btn" id="btn-parse">[ parse text ]</button>
+            <button type="button" class="btn secondary" id="btn-upload">[ upload file ]</button>
+            <input type="file" id="file-input" accept=".txt,.md,.json,text/plain,application/json" hidden>
+            <span class="file-hint">.txt / .md / .json</span>
+          </div>
+        </form>
+      </section>
+
+      <section class="box" id="output-box">
+        <div class="box-title">[ json output ]</div>
+        <pre id="json-output" class="json-view empty">// waiting for input&hellip;</pre>
+        <div class="button-row">
+          <button type="button" class="btn" id="btn-copy" hidden>[ copy ]</button>
+          <button type="button" class="btn secondary" id="btn-download" hidden>[ download .json ]</button>
+        </div>
+      </section>
+
+    </main>
+
+    <footer class="statusbar">
+      <span class="brand">notext</span>
+      <span id="status-msg" class="ok">ready</span>
+      <span class="hint">ctrl+enter = parse</span>
+      <span class="stats" id="stats">parts: 0 | sentences: 0 | words: 0</span>
+    </footer>
+
+  </div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
