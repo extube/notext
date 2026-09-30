@@ -21,6 +21,7 @@ export function parseText(text, meta) {
     title: meta.title || "",
     date: meta.date || "",
     language: meta.language || "",
+    translate_to: meta.translate_to || "",
   };
 
   splitParts(text).forEach((part, index) => {
