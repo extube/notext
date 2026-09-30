@@ -4,13 +4,19 @@ Guidance for AI coding agents working on this repository.
 
 ## Project Overview
 
-**notext** is a one-page, backend-free JavaScript site for language learning:
-users enter or upload text, and the app parses it into structured JSON for
-reading and translation practice.
+**notext** is a server-rendered JavaScript site for language learning: users
+enter or upload text, the backend parses it into structured JSON, stores it,
+and renders reading pages from it.
 
 - Vanilla JavaScript (ES modules), no frameworks, no build step, zero
   dependencies.
-- All parsing runs client-side; `server.js` only serves static files.
+- All pages are rendered server-side by `server.js` (HTML templates in
+  `js/pages.js`); the browser receives HTML plus tiny interaction scripts
+  (upload dialog, copy/select) that never render content.
+- Parsing and storage run server-side; documents are saved to
+  `data/<base64_id>.json` and addressed by base64url id.
+- The SvelteKit migration (docs/routing.md) will replace this stack while
+  keeping the same routes and server-side rendering.
 
 ## Commands
 
@@ -27,11 +33,13 @@ There is no test framework or linter yet. To verify changes:
 ## Project Structure
 
 ```
-index.html      # single page, TUI-style markup
-css/style.css   # black terminal theme (scanlines, phosphor-green accents)
-js/parser.js    # pure text-parsing logic (no DOM) — split into parts/sentences/words
-js/app.js       # DOM/UI layer: form, upload, copy, download, status bar
-server.js       # zero-dependency static file server (Node.js, ESM)
+server.js       # zero-dependency server: renders all pages, POST /read, storage, /json/<id>
+js/pages.js     # server-side HTML templates for every page (form, doc, json, 404)
+js/parser.js    # pure text-parsing logic (no DOM) — used server-side, testable from Node
+js/form.js      # main page helper: upload dialog only (no rendering)
+js/doc.js       # doc page helper: copy sentence / select word only (no rendering)
+css/style.css   # minimal dark theme (near-black surfaces, one green accent)
+data/           # file storage: one <base64_id>.json per document (gitignored)
 ```
 
 Keep `js/parser.js` DOM-free and pure so it stays testable from Node.
@@ -45,6 +53,7 @@ Parsing output is a JSON object consumed by the learning workflow:
   "title": "...",
   "date": "YYYY-MM-DD",
   "language": "ru|fr|en-GB|en-US|es|it|de",
+  "translate_to": "ru|fr|en-GB|en-US|es|it|de",
   "part_1": {
     "sentences": [{ "words": ["..."] }]
   }
@@ -59,8 +68,11 @@ Parsing output is a JSON object consumed by the learning workflow:
 
 ## Conventions
 
-- Design: black TUI/terminal aesthetic; do not introduce light themes,
-  proportional fonts, or heavy assets.
+- Design: minimal dark UI — no light themes, no terminal/CRT effects (no
+  scanlines, ASCII art, monospace-for-UI), no heavy assets; forms stay small
+  and focused.
+- The main page never embeds the JSON output; parsed results surface as a
+  status line plus copy/download actions.
 - Commit messages follow Conventional Commits (`feat:`, `fix:`, `chore:`).
 - Branch naming: `feat/#<issue>-<slug>`, `fix/#<issue>-<slug>`.
 - No secrets in the repo; no telemetry.
