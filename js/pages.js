@@ -82,7 +82,7 @@ ${langSelect}${translationSelect}
       </div>
 
       <div class="actions">
-        <button type="submit" class="btn primary">Read</button>
+        <button type="submit" class="btn primary">Create</button>
         <button type="button" class="btn" id="btn-upload">Upload</button>
         <input type="file" id="file-input" name="file" accept=".txt,.md,text/plain" hidden>
         <span class="muted small" id="file-name">.txt / .md</span>
@@ -97,30 +97,19 @@ ${langSelect}${translationSelect}
   );
 }
 
-export function docPage(doc) {
-  const parts = Object.keys(doc)
+export function firstWords(doc, limit = 100) {
+  const words = Object.keys(doc)
     .filter((key) => key.startsWith("part_"))
-    .map((key) => {
-      const sentences = doc[key].sentences
-        .map(
-          (sentence) =>
-            `        <p class="sentence" title="Click to copy sentence">${sentence.words
-              .map((word) => `<span class="word">${escapeHtml(word)}</span>`)
-              .join(" ")}</p>`,
-        )
-        .join("\n");
-      return `      <section class="part">
-        <h2 class="part-title">${escapeHtml(key.replace(/^part_/, "Part "))}</h2>
-${sentences}
-      </section>`;
-    })
-    .join("\n");
+    .flatMap((key) => doc[key].sentences.flatMap((sentence) => sentence.words));
+  return { text: words.slice(0, limit).join(" "), truncated: words.length > limit };
+}
 
-  const metaBits = [doc.date, doc.language, doc.translate_to && `→ ${doc.translate_to}`]
+export function viewPage(id, doc) {
+  const { text, truncated } = firstWords(doc, 100);
+  const metaBits = [doc.language, doc.translate_to && `→ ${doc.translate_to}`]
     .filter(Boolean)
     .map(escapeHtml)
     .join(" · ");
-
   return layout(
     doc.title || "document",
     `  <header class="site-header">
@@ -130,14 +119,65 @@ ${sentences}
   </header>
 
   <main class="page doc-page">
+    <div class="back-row"><a class="btn" href="/">Back</a></div>
+    <article class="card">
+      <h1>${escapeHtml(doc.title || "Untitled")}</h1>
+      <p class="meta">${metaBits}</p>
+      <p class="preview">${escapeHtml(text)}${truncated ? '<span class="muted"> …</span>' : ""}</p>
+      <div class="actions">
+        <a class="btn primary" href="/doc/${escapeHtml(id)}/read">Read</a>
+        <a class="btn" href="/doc/${escapeHtml(id)}/share">Share</a>
+      </div>
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <span>notext · pages are rendered on the server</span>
+  </footer>`,
+  );
+}
+
+export function readPage(id, doc) {
+  const parts = Object.keys(doc)
+    .filter((key) => key.startsWith("part_"))
+    .map((key) => {
+      const blocks = [
+        `        <div class="block">
+          <h2 class="part-title">${escapeHtml(key.replace(/^part_/, "Part "))}</h2>
+          <button class="copy-btn" type="button">Copy</button>
+        </div>`,
+        ...doc[key].sentences.map(
+          (sentence) => `        <div class="block">
+          <p class="sentence">${escapeHtml(sentence.words.join(" "))}</p>
+          <button class="copy-btn" type="button">Copy</button>
+        </div>`,
+        ),
+      ].join("\n");
+      return `      <section class="part">
+${blocks}
+      </section>`;
+    })
+    .join("\n");
+
+  return layout(
+    doc.title || "document",
+    `  <header class="site-header">
+    <span class="brand">notext</span>
+    <span class="tagline">${escapeHtml(doc.title || "Untitled")}</span>
+    <a class="nav-link" href="/doc/${escapeHtml(id)}/view">Preview</a>
+  </header>
+
+  <main class="page doc-page">
+    <div class="back-row"><a class="btn" href="/doc/${escapeHtml(id)}/view">Back</a></div>
     <article class="card doc-card">
+      <a class="btn begin-test" href="/doc/${escapeHtml(id)}/test">Begin testing</a>
       <h1>${escapeHtml(doc.title || "Untitled")}</h1>
 ${parts}
     </article>
   </main>
 
   <footer class="site-footer">
-    <span>Click a sentence to copy it · click a word to select it</span>
+    <span>Hover a block to reveal its copy button</span>
   </footer>`,
   "/js/doc.js",
   );
@@ -149,7 +189,7 @@ export function jsonPage(id, raw) {
     `  <header class="site-header">
     <span class="brand">notext</span>
     <span class="tagline">raw json</span>
-    <a class="nav-link" href="/doc/${escapeHtml(id)}">Open document</a>
+    <a class="nav-link" href="/doc/${escapeHtml(id)}/view">Preview</a>
   </header>
 
   <main class="page doc-page">
@@ -158,6 +198,85 @@ export function jsonPage(id, raw) {
       <pre class="json-view">${escapeHtml(raw)}</pre>
       <div class="actions">
         <a class="btn" href="/api/docs/${escapeHtml(id)}">Raw JSON</a>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <span>notext · pages are rendered on the server</span>
+  </footer>`,
+  );
+}
+
+export function sharePage(id, url) {
+  return layout(
+    "share document",
+    `  <header class="site-header">
+    <span class="brand">notext</span>
+    <span class="tagline">share</span>
+    <a class="nav-link" href="/doc/${escapeHtml(id)}/view">Preview</a>
+  </header>
+
+  <main class="page doc-page">
+    <div class="back-row"><a class="btn" href="/doc/${escapeHtml(id)}/view">Back</a></div>
+    <div class="card">
+      <h1>Share this text</h1>
+      <p class="muted">Anyone with this link can read it.</p>
+      <input type="text" id="share-link" class="link-box" readonly value="${escapeHtml(url)}">
+      <div class="actions">
+        <button type="button" class="btn primary" id="share-copy">Copy link</button>
+        <a class="btn" href="${escapeHtml(url)}" target="_blank" rel="noopener">Open link</a>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <span>notext · pages are rendered on the server</span>
+  </footer>`,
+  "/js/share.js",
+  );
+}
+
+export function testPage(id, doc) {
+  return layout(
+    "testing",
+    `  <header class="site-header">
+    <span class="brand">notext</span>
+    <span class="tagline">testing</span>
+    <a class="nav-link" href="/doc/${escapeHtml(id)}/view">Preview</a>
+  </header>
+
+  <main class="page doc-page">
+    <div class="card">
+      <h1>${escapeHtml(doc.title || "Untitled")}</h1>
+      <div class="actions">
+        <a class="btn" href="/doc/${escapeHtml(id)}/read">Back</a>
+        <a class="btn primary" href="/doc/${escapeHtml(id)}/test/result">Finish</a>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <span>notext · pages are rendered on the server</span>
+  </footer>`,
+  );
+}
+
+export function testResultPage(id, doc) {
+  return layout(
+    "test results",
+    `  <header class="site-header">
+    <span class="brand">notext</span>
+    <span class="tagline">test results</span>
+    <a class="nav-link" href="/doc/${escapeHtml(id)}/view">Preview</a>
+  </header>
+
+  <main class="page doc-page">
+    <div class="card">
+      <h1>Results</h1>
+      <p class="muted">${escapeHtml(doc.title || "Untitled")}</p>
+      <div class="actions">
+        <a class="btn primary" href="/">To main page</a>
       </div>
     </div>
   </main>
