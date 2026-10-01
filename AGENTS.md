@@ -33,13 +33,14 @@ There is no test framework or linter yet. To verify changes:
 ## Project Structure
 
 ```
-server.js       # zero-dependency server: renders all pages, POST /read, storage, /json/<id>
-js/pages.js     # server-side HTML templates for every page (form, doc, json, 404)
+server.js       # zero-dependency server: renders all pages, POST /read, storage, doc routes, /link/<link_id>
+js/pages.js     # server-side HTML templates for every page (form, view, read, json, share, test, 404)
 js/parser.js    # pure text-parsing logic (no DOM) — used server-side, testable from Node
 js/form.js      # main page helper: upload dialog only (no rendering)
-js/doc.js       # doc page helper: copy sentence / select word only (no rendering)
+js/doc.js       # read page helper: block copy buttons only (no rendering)
+js/share.js     # share page helper: copy-link button only (no rendering)
 css/style.css   # minimal dark theme (near-black surfaces, one green accent)
-data/           # file storage: one <base64_id>.json per document (gitignored)
+data/           # file storage: data/<base64_id>.json per document, data/links/<link_id> → doc id (gitignored)
 ```
 
 Keep `js/parser.js` DOM-free and pure so it stays testable from Node.

@@ -168,6 +168,7 @@ textarea {
   font-size: 0.875rem;
   padding: 0.5rem 1rem;
   cursor: pointer;
+  text-decoration: none;
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 
@@ -244,36 +245,96 @@ textarea {
 }
 
 .sentence {
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* ---- view page ---- */
+
+.meta {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.preview {
+  line-height: 1.7;
+  margin-bottom: 0.5rem;
+}
+
+/* ---- reading blocks ---- */
+
+.block {
+  position: relative;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.85rem 3.4rem 0.85rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.block .part-title {
+  margin: 0;
+}
+
+/* ---- back button / corner button ---- */
+
+.back-row {
+  margin-bottom: 0.75rem;
+}
+
+.doc-card {
+  position: relative;
+}
+
+.begin-test {
+  position: absolute;
+  top: 1.75rem;
+  right: 1.75rem;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.72rem;
+  padding: 0.15rem 0.55rem;
   cursor: pointer;
-  padding: 0.15rem 0.35rem;
-  margin: 0 -0.35rem;
-  border-radius: 4px;
-  transition: background 0.15s ease;
+  opacity: 0.5;
+  transition: opacity 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
-.sentence:hover {
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.sentence.copied {
-  background: rgba(62, 207, 142, 0.15);
-}
-
-.word {
-  cursor: pointer;
-  border-radius: 2px;
-}
-
-.word:hover,
-.word.selected {
-  text-decoration: underline;
-  text-decoration-color: var(--accent);
-  text-decoration-thickness: 2px;
-  text-underline-offset: 3px;
-}
-
-.word.selected {
+.block:hover .copy-btn,
+.copy-btn:hover,
+.copy-btn:focus {
+  opacity: 1;
   color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ---- share page ---- */
+
+.link-box {
+  width: 100%;
+  margin-top: 1rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.875rem;
+  padding: 0.55rem 0.7rem;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.link-box:focus {
+  border-color: var(--accent);
 }
 
 /* ---- json view ---- */

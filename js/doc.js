@@ -1,19 +1,14 @@
-document.querySelectorAll(".sentence").forEach((sentence) => {
-  sentence.addEventListener("click", async () => {
+document.querySelectorAll(".copy-btn").forEach((button) => {
+  button.addEventListener("click", async () => {
+    const target = button.parentElement.querySelector(".sentence, .part-title");
+    if (!target) return;
     try {
-      const text = sentence.textContent.trim().replace(/\s+/g, " ");
+      const text = target.textContent.trim().replace(/\s+/g, " ");
       await navigator.clipboard.writeText(text);
-      sentence.classList.add("copied");
-      setTimeout(() => sentence.classList.remove("copied"), 600);
+      button.textContent = "Copied";
+      setTimeout(() => (button.textContent = "Copy"), 800);
     } catch {
       // clipboard unavailable
     }
-  });
-});
-
-document.querySelectorAll(".word").forEach((word) => {
-  word.addEventListener("click", (event) => {
-    event.stopPropagation();
-    word.classList.toggle("selected");
   });
 });

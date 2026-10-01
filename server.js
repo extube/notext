@@ -4,10 +4,11 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { parseText } from "./js/parser.js";
-import { formPage, docPage, jsonPage, notFoundPage } from "./js/pages.js";
+import { formPage, viewPage, readPage, jsonPage, sharePage, testPage, testResultPage, notFoundPage } from "./js/pages.js";
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.join(ROOT, "data");
+const LINKS_DIR = path.join(DATA_DIR, "links");
 const PORT = process.env.PORT || 3000;
 const MAX_BODY = 10 * 1024 * 1024;
 const ID_RE = /^[A-Za-z0-9_-]+$/;
@@ -129,8 +130,22 @@ async function handleRead(req, res) {
   });
 
   const id = saveDoc(doc);
-  res.writeHead(303, { Location: `/doc/${id}` });
+  res.writeHead(303, { Location: `/doc/${id}/view` });
   res.end();
+}
+
+function findOrCreateLink(docId) {
+  fs.mkdirSync(LINKS_DIR, { recursive: true });
+  for (const entry of fs.readdirSync(LINKS_DIR)) {
+    try {
+      if (fs.readFileSync(path.join(LINKS_DIR, entry), "utf8") === docId) return entry;
+    } catch {
+      // skip unreadable link files
+    }
+  }
+  const linkId = Buffer.from(crypto.randomUUID()).toString("base64url");
+  fs.writeFileSync(path.join(LINKS_DIR, linkId), docId);
+  return linkId;
 }
 
 const server = http.createServer(async (req, res) => {
@@ -147,24 +162,57 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    let m = pathname.match(/^\/doc\/([A-Za-z0-9_-]+)$/);
+    let     m = pathname.match(/^\/doc\/([A-Za-z0-9_-]+)$/);
     if (req.method === "GET" && m) {
-      const raw = loadDoc(m[1]);
-      if (raw === null) {
+      if (loadDoc(m[1]) === null) {
         send(res, 404, notFoundPage());
       } else {
-        send(res, 200, docPage(JSON.parse(raw)));
+        res.writeHead(302, { Location: `/doc/${m[1]}/view` });
+        res.end();
       }
       return;
     }
 
-    m = pathname.match(/^\/json\/([A-Za-z0-9_-]+)$/);
+    m = pathname.match(/^\/doc\/([A-Za-z0-9_-]+)\/(view|read|json|share|test|test\/result)$/);
     if (req.method === "GET" && m) {
-      const raw = loadDoc(m[1]);
+      const [, id, action] = m;
+      const raw = loadDoc(id);
       if (raw === null) {
         send(res, 404, notFoundPage());
+      } else if (action === "view") {
+        send(res, 200, viewPage(id, JSON.parse(raw)));
+      } else if (action === "read") {
+        send(res, 200, readPage(id, JSON.parse(raw)));
+      } else if (action === "json") {
+        send(res, 200, jsonPage(id, raw));
+      } else if (action === "test") {
+        send(res, 200, testPage(id, JSON.parse(raw)));
+      } else if (action === "test/result") {
+        send(res, 200, testResultPage(id, JSON.parse(raw)));
       } else {
-        send(res, 200, jsonPage(m[1], raw));
+        const linkId = findOrCreateLink(id);
+        const host = req.headers.host || "localhost";
+        send(res, 200, sharePage(id, `http://${host}/link/${linkId}`));
+      }
+      return;
+    }
+
+    m = pathname.match(/^\/link\/([A-Za-z0-9_-]+)$/);
+    if (req.method === "GET" && m) {
+      const linkId = m[1];
+      let docId = null;
+      if (ID_RE.test(linkId)) {
+        try {
+          docId = fs.readFileSync(path.join(LINKS_DIR, linkId), "utf8");
+        } catch {
+          docId = null;
+        }
+      }
+      if (docId && loadDoc(docId) !== null) {
+        res.writeHead(302, { Location: `/doc/${docId}/view` });
+        res.end();
+      } else {
+        send(res, 404, notFoundPage());
       }
       return;
     }
