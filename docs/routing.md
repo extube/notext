@@ -1,8 +1,8 @@
 # Routing & Pages: notext v0.3 Spec
 
-Reference for the `feat/#4-routing` branch. Defines the routes, page
-behaviour, and storage scheme; the SvelteKit migration (notes at the end)
-will keep this same route map.
+Reference for the current SvelteKit implementation (branch
+`feat/#6-svelte-kit-migration`). Defines the routes, page behaviour, and
+storage scheme — all unchanged from the vanilla-stack phase.
 
 ## Routes (spec)
 
