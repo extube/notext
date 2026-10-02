@@ -28,7 +28,7 @@ learning.
 4. Reading mode also offers **Begin testing** (test and results pages are
    placeholders for now).
 
-## Getting Started
+### Getting Started
 
 ### Prerequisites
 
@@ -43,28 +43,40 @@ cd notext
 npm install
 ```
 
-### Usage
+### Development
 
 ```bash
+npm run dev
+```
+
+The dev server listens on port **5173** by default — open
+[http://localhost:5173](http://localhost:5173).
+
+### Production
+
+```bash
+npm run build
 npm start
 ```
 
-The server listens on port **3000** by default — open
-[http://localhost:3000](http://localhost:3000).
-
-To run on a different port:
+The production server listens on port **3000** by default — open
+[http://localhost:3000](http://localhost:3000). Use `PORT` for a custom port
+and set `ORIGIN` to stop SvelteKit's CSRF protection from rejecting form
+submissions in local production runs:
 
 ```bash
-PORT=4000 npm start
+PORT=4000 ORIGIN=http://localhost:4000 npm start
 ```
 
 ### Project Setup
 
-- No build step and no runtime dependencies — plain Node.js with ES modules.
-- All pages are rendered server-side by `server.js` (page templates in
-  `js/pages.js`); the parser lives in `js/parser.js`.
-- Documents are stored as JSON files in `data/` (created automatically,
-  gitignored), share links in `data/links/`.
+- SvelteKit app (Svelte 5, `@sveltejs/adapter-node`) — every page is rendered
+  server-side; the browser only receives HTML plus small interaction handlers
+  (upload dialog, copy buttons).
+- The parser and file storage live in `src/lib/server/`; documents are stored
+  as JSON files in `data/` (created automatically, gitignored), share links in
+  `data/links/`.
+- styles in `src/app.css` (minimal dark theme).
 
 ## Roadmap
 

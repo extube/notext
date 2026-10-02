@@ -8,42 +8,53 @@ Guidance for AI coding agents working on this repository.
 enter or upload text, the backend parses it into structured JSON, stores it,
 and renders reading pages from it.
 
-- Vanilla JavaScript (ES modules), no frameworks, no build step, zero
-  dependencies.
-- All pages are rendered server-side by `server.js` (HTML templates in
-  `js/pages.js`); the browser receives HTML plus tiny interaction scripts
-  (upload dialog, copy/select) that never render content.
-- Parsing and storage run server-side; documents are saved to
-  `data/<base64_id>.json` and addressed by base64url id.
-- The SvelteKit migration (docs/routing.md) will replace this stack while
-  keeping the same routes and server-side rendering.
+- SvelteKit (Svelte 5, `@sveltejs/adapter-node`, server-side rendering).
+- Every page is rendered on the server (components in `src/routes/`, data
+  loads in `+page.server.js`); the browser receives HTML plus small
+  interaction handlers (upload dialog, copy buttons) that never render
+  content.
+- Parsing and storage run server-side in `src/lib/server/`; documents are
+  saved to `data/<base64_id>.json` and addressed by base64url id.
+- docs/routing.md records the route map and the storage scheme.
 
 ## Commands
 
 ```bash
-npm start          # start static server (default port 3000)
-PORT=4000 npm start  # start on a custom port
+npm run dev         # dev server (vite dev, default port 5173)
+npm run build       # production build into build/
+npm start           # run the production build (PORT env, default 3000)
+PORT=4000 npm start # run the production build on a custom port
 ```
+
+The adapter-node server expects `ORIGIN=http://localhost:<port>` in local
+production runs (SvelteKit CSRF protection rejects form posts otherwise); use
+`PROTOCOL_HEADER`/`HOST_HEADER` behind a reverse proxy.
 
 There is no test framework or linter yet. To verify changes:
 
-- Parser logic: `node -e "import('./js/parser.js').then(m => console.log(m.parseText('Hi there! Ok?', {title:'t', date:'2026-01-01', language:'en-US'})))"`
-- Site: start the server and check `http://localhost:<port>/` returns 200.
+- Parser logic: `node -e "import('./src/lib/server/parser.js').then(m => console.log(m.parseText('Hi there! Ok?', {title:'t', date:'2026-01-01', language:'en-US'})))"`
+- Site: `npm run build` then start the server and check
+  `http://localhost:<port>/` returns 200.
 
 ## Project Structure
 
 ```
-server.js       # zero-dependency server: renders all pages, POST /read, storage, doc routes, /link/<link_id>
-js/pages.js     # server-side HTML templates for every page (form, view, read, json, share, test, 404)
-js/parser.js    # pure text-parsing logic (no DOM) — used server-side, testable from Node
-js/form.js      # main page helper: upload dialog only (no rendering)
-js/doc.js       # read page helper: block copy buttons only (no rendering)
-js/share.js     # share page helper: copy-link button only (no rendering)
-css/style.css   # minimal dark theme (near-black surfaces, one green accent)
-data/           # file storage: data/<base64_id>.json per document, data/links/<link_id> → doc id (gitignored)
+src/routes/         # file-based routes (all server-rendered):
+  +page.svelte      # GET / — form with Create / Upload buttons
+  doc/[id]/view|read|json|share|test[...]  # doc pages, +page.server.js loads
+  link/[link_id]/+server.js  # shared link → 302 to /doc/<id>/view
+  api/docs/[id]/+server.js   # raw JSON (application/json)
+src/lib/
+  server/parser.js  # pure text-parsing logic (no DOM) — testable from Node
+  server/storage.js # file storage: docs, share links (Node fs)
+  languages.js      # shared 7-language list
+svelte.config.js    # @sveltejs/adapter-node
+src/app.css         # minimal dark theme (near-black surfaces, one green accent)
+data/               # file storage: data/<base64_id>.json per document, data/links/<link_id> → doc id (gitignored)
 ```
 
-Keep `js/parser.js` DOM-free and pure so it stays testable from Node.
+Keep `src/lib/server/parser.js` DOM-free and pure so it stays testable from
+Node.
 
 ## Data Format (do not break)
 
