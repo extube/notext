@@ -317,6 +317,77 @@ textarea {
   border-color: var(--accent);
 }
 
+/* ---- word popup ---- */
+
+.word {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  font: inherit;
+  white-space: pre-wrap;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.word:hover {
+  color: var(--accent);
+}
+
+.word-popup {
+  position: fixed;
+  bottom: 1rem;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: min(620px, 100% - 2rem);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem 1.75rem;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+  z-index: 10;
+}
+
+.popup-close {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1;
+  width: 1.7rem;
+  height: 1.7rem;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.popup-close:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.popup-word {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-bottom: 0.1rem;
+}
+
+.popup-transcription {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.popup-translation {
+  font-size: 0.95rem;
+}
+
 /* ---- share page ---- */
 
 .link-box {
