@@ -6,15 +6,50 @@
     Object.keys(doc)
       .filter((key) => key.startsWith("part_"))
       .flatMap((key) => [
-        { kind: "title", text: key.replace(/^part_/, "Part ") },
+        { kind: "title", text: key.replace(/^part_/, "Part "), words: null },
         ...doc[key].sentences.map((sentence) => ({
           kind: "sentence",
           text: sentence.words.join(" "),
+          words: sentence.words,
         })),
       ]),
   );
 
   let copiedIndex = $state(-1);
+
+  let selected = $state(null);
+  let lookupSeq = 0;
+
+  async function selectWord(word) {
+    if (!word.trim()) {
+      return;
+    }
+    const seq = ++lookupSeq;
+    selected = { word, translation: null, transcription: null, loading: true };
+    try {
+      const params = new URLSearchParams({
+        q: word,
+        lang: doc.language,
+        to: doc.translate_to || "en",
+      });
+      const res = await fetch(`/api/word?${params}`);
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+      const info = await res.json();
+      if (seq === lookupSeq) {
+        selected = { ...selected, ...info, loading: false };
+      }
+    } catch {
+      if (seq === lookupSeq) {
+        selected = { ...selected, loading: false, failed: true };
+      }
+    }
+  }
+
+  function closePopup() {
+    selected = null;
+  }
 
   async function copy(block, index) {
     try {
@@ -42,7 +77,14 @@
         {#if block.kind === "title"}
           <h2 class="part-title">{block.text}</h2>
         {:else}
-          <p class="sentence">{block.text}</p>
+          <p class="sentence">
+            {#each block.words as word, wordIndex}
+              <button
+                class="word"
+                type="button"
+                onclick={() => selectWord(word)}>{word}</button>{' '}
+            {/each}
+          </p>
         {/if}
         <button class="copy-btn" type="button" onclick={() => copy(block, index)}>
           {copiedIndex === index ? "Copied" : "Copy"}
@@ -52,6 +94,33 @@
   </article>
 </main>
 
+{#if selected}
+  <div class="word-popup" role="dialog" aria-label="Word details">
+    <button class="popup-close" type="button" aria-label="Close" onclick={closePopup}>
+      ×
+    </button>
+    <div class="popup-word">{selected.word}</div>
+    <div class="popup-transcription">
+      {#if selected.loading}
+        <span class="muted">…</span>
+      {:else if selected.transcription}
+        {selected.transcription}
+      {:else}
+        <span class="muted">no transcription</span>
+      {/if}
+    </div>
+    <div class="popup-translation">
+      {#if selected.loading}
+        Looking up…
+      {:else if selected.translation}
+        {selected.translation}
+      {:else}
+        <span class="muted">{selected.failed ? "Lookup failed" : "No translation found"}</span>
+      {/if}
+    </div>
+  </div>
+{/if}
+
 <footer class="site-footer">
-  <span>Hover a block to reveal its copy button</span>
+  <span>Click a word to see its translation · hover a block to copy it</span>
 </footer>
