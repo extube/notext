@@ -75,6 +75,12 @@ Parsing output is a JSON object consumed by the learning workflow:
 - Blank lines separate parts (`part_1`, `part_2`, …).
 - Sentences are split on `.`, `!`, `?`, `…`.
 - Words are whitespace-separated; punctuation stays attached.
+- Word units: for `fr|en-GB|en-US` the parser groups articles/possessives with
+  the following noun (`"a book"`, `"le chat"`, `"de la patience"`) and keeps
+  `il y a` / `there is|are` together — each entry is one clickable unit.
+  French elisions are split into two units first (`"qu'il"` → `"qu'"` +
+  `"il"`, same for `j' s' c' d' l' n' m' t'` and compound `puisqu' | jusqu' |
+  lorsqu'`); `aujourd'hui` stays intact.
 - Supported languages: Russian, French, English (UK), English (US), Spanish,
   Italian, German.
 
