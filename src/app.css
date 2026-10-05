@@ -333,6 +333,12 @@ textarea {
 
 .word:hover {
   color: var(--accent);
+  text-decoration: underline;
+}
+
+.word:focus-visible {
+  outline: none;
+  text-decoration: underline;
 }
 
 .word-popup {
