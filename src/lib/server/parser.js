@@ -117,32 +117,6 @@ export function parseText(text, meta) {
   return doc;
 }
 
-/* Re-applies elision split + chunking so documents stored before the latest
-   parser rules render with current units. Idempotent: already-chunked unit
-   strings pass through unchanged (compound units contain spaces and are
-   never re-split). */
-export function normalizeDocUnits(doc) {
-  const language = doc.language || "";
-  if (!/^(fr|en-GB|en-US)$/.test(language)) {
-    return doc;
-  }
-  const isFr = language.startsWith("fr");
-  for (const key of Object.keys(doc)) {
-    if (!key.startsWith("part_")) {
-      continue;
-    }
-    for (const sentence of doc[key].sentences) {
-      const words = isFr
-        ? sentence.words.flatMap((unit) =>
-            unit.includes(" ") ? [unit] : splitElisions([unit]),
-          )
-        : sentence.words;
-      sentence.words = chunkWords(words, language);
-    }
-  }
-  return doc;
-}
-
 export function buildStats(doc) {
   let parts = 0;
   let sentences = 0;
