@@ -1,4 +1,6 @@
 <script>
+  import { joinWords, isPunctUnit, isClosingPunct } from "$lib/text.js";
+
   let { data } = $props();
 
   const doc = $derived(data.doc);
@@ -9,7 +11,7 @@
         { kind: "title", text: key.replace(/^part_/, "Part "), words: null },
         ...doc[key].sentences.map((sentence) => ({
           kind: "sentence",
-          text: sentence.words.join(" "),
+          text: joinWords(sentence.words),
           words: sentence.words,
         })),
       ]),
@@ -79,10 +81,10 @@
         {:else}
           <p class="sentence">
             {#each block.words as word, wordIndex}
-              <button
+              {#if wordIndex > 0 && !isClosingPunct(word)}{' '}{/if}{#if isPunctUnit(word)}<span class="punct">{word}</span>{:else}<button
                 class="word"
                 type="button"
-                onclick={() => selectWord(word)}>{word}</button>{' '}
+                onclick={() => selectWord(word)}>{word}</button>{/if}
             {/each}
           </p>
         {/if}

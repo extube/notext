@@ -1,4 +1,6 @@
 <script>
+  import { joinWords } from "$lib/text.js";
+
   let { data } = $props();
 
   const doc = $derived(data.doc);
@@ -7,7 +9,7 @@
       .filter((key) => key.startsWith("part_"))
       .flatMap((key) => doc[key].sentences.flatMap((sentence) => sentence.words)),
   );
-  const preview = $derived(words.slice(0, 100).join(" "));
+  const preview = $derived(joinWords(words.slice(0, 100)));
   const meta = $derived(
     [doc.language, doc.translate_to && `→ ${doc.translate_to}`].filter(Boolean).join(" · "),
   );
