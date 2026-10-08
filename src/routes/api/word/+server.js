@@ -24,45 +24,41 @@ async function fetchJson(url, timeout = TIMEOUT_MS) {
   return res.json();
 }
 
-async function fetchText(url, body, timeout = LLM_TIMEOUT_MS) {
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
-    signal: AbortSignal.timeout(timeout),
-  });
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status}`);
+
+/* LLM providers (OpenAI-compatible /v1/chat/completions):
+   1. free cloud API (e.g. Groq) if configured with a key
+   2. local model from settings (llama.cpp, vLLM, OVMS, LM Studio…)
+   The local model id must match the server's; pick the first entry of
+   /v1/models and fall back to a neutral name (llama.cpp ignores the id). */
+function cloudProvider(settings) {
+  const { base, key, model } = settings.api;
+  if (!key) {
+    return null;
   }
-  return res.text();
+  return {
+    url: `${base.replace(/\/$/, "")}/chat/completions`,
+    headers: { authorization: `Bearer ${key}` },
+    model,
+  };
 }
 
-/* Local OpenAI-compatible LLM: llama.cpp, vLLM, OVMS, LM Studio… The model
-   id must match the server's; pick the first entry of /v1/models and fall
-   back to a neutral name (llama.cpp ignores the id). */
-async function resolveModelId(settings) {
+async function localProvider(settings) {
   const { host, port } = settings.llm;
+  let model = "local-model";
   try {
-    const data = await fetchJson(
-      `http://${host}:${port}/v1/models`,
-      5000,
-    );
-    const id = data?.data?.[0]?.id;
-    if (id) {
-      return id;
-    }
+    const data = await fetchJson(`http://${host}:${port}/v1/models`, 5000);
+    model = data?.data?.[0]?.id || model;
   } catch {
     // fall through to the default id
   }
-  return "local-model";
+  return {
+    url: `http://${host}:${port}/v1/chat/completions`,
+    headers: {},
+    model,
+  };
 }
 
-async function lookupWithLLM(word, sentence, from, to) {
-  const settings = loadSettings();
-  const model = await resolveModelId(settings);
-  const { host, port } = settings.llm;
-  const url = `http://${host}:${port}/v1/chat/completions`;
-
+async function chatLookup(provider, word, sentence, from, to) {
   const schema =
     '{"translation": string, "part_of_speech": string, "form": string, "synonyms": string[]}';
   const system =
@@ -80,7 +76,7 @@ async function lookupWithLLM(word, sentence, from, to) {
     `Word: ${word}`;
 
   const body = {
-    model,
+    model: provider.model,
     stream: false,
     temperature: 0,
     max_tokens: 400,
@@ -90,7 +86,16 @@ async function lookupWithLLM(word, sentence, from, to) {
     ],
   };
 
-  const content = JSON.parse(await fetchText(url, body)).choices?.[0]?.message?.content;
+  const res = await fetch(provider.url, {
+    method: "POST",
+    headers: { "content-type": "application/json", ...provider.headers },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(LLM_TIMEOUT_MS),
+  });
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}`);
+  }
+  const content = (await res.json()).choices?.[0]?.message?.content;
   if (!content) {
     throw new Error("LLM returned no content");
   }
@@ -229,14 +234,19 @@ export async function GET({ url, setHeaders }) {
     return json({ translation: null, transcription: null });
   }
 
-  // local LLM first: it handles whole units (multi-word) and context
+  // LLM first: it handles whole units (multi-word) and context.
+  // Free cloud API (e.g. Groq) as primary, local model as fallback.
   if (sentence) {
-    try {
-      const llm = await lookupWithLLM(word, sentence, from, to);
-      const transcription = await transcribe(word, from);
-      return json({ word, ...llm, transcription, source: "local-llm" });
-    } catch (error) {
-      console.error(`local LLM lookup failed: ${error.message}`);
+    const settings = loadSettings();
+    const providers = [cloudProvider(settings), await localProvider(settings)].filter(Boolean);
+    for (const provider of providers) {
+      try {
+        const llm = await chatLookup(provider, word, sentence, from, to);
+        const transcription = await transcribe(word, from);
+        return json({ word, ...llm, transcription, source: provider.model });
+      } catch (error) {
+        console.error(`LLM lookup failed (${provider.model}): ${error.message}`);
+      }
     }
   }
 

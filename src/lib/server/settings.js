@@ -5,6 +5,11 @@ const SETTINGS_PATH = path.join(process.cwd(), "data", "settings.json");
 
 const DEFAULTS = {
   llm: { host: "localhost", port: "8000" },
+  api: {
+    base: "https://api.groq.com/openai/v1",
+    key: "",
+    model: "llama-3.1-8b-instant",
+  },
 };
 
 export function loadSettings() {
@@ -14,6 +19,11 @@ export function loadSettings() {
       llm: {
         host: raw?.llm?.host || DEFAULTS.llm.host,
         port: raw?.llm?.port || DEFAULTS.llm.port,
+      },
+      api: {
+        base: raw?.api?.base || DEFAULTS.api.base,
+        key: raw?.api?.key || "",
+        model: raw?.api?.model || DEFAULTS.api.model,
       },
     };
   } catch {
@@ -25,6 +35,9 @@ export function saveSettings(partial) {
   const merged = structuredClone(loadSettings());
   if (partial?.llm) {
     merged.llm = { ...merged.llm, ...partial.llm };
+  }
+  if (partial?.api) {
+    merged.api = { ...merged.api, ...partial.api };
   }
   fs.mkdirSync(path.dirname(SETTINGS_PATH), { recursive: true });
   fs.writeFileSync(SETTINGS_PATH, JSON.stringify(merged, null, 2));
