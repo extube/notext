@@ -480,3 +480,9 @@ textarea {
   white-space: pre;
   max-height: 70vh;
 }
+
+/* Selecting page text must not select button labels ("Copy") */
+.copy-btn,
+.begin-test {
+  user-select: none;
+}
