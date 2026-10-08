@@ -73,5 +73,5 @@
 </main>
 
 <footer class="site-footer">
-  <span>notext · pages are rendered on the server</span>
+  <span><a href="/settings">Settings</a> · notext · pages are rendered on the server</span>
 </footer>
