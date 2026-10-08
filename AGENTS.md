@@ -73,7 +73,10 @@ Parsing output is a JSON object consumed by the learning workflow:
 ```
 
 - Blank lines separate parts (`part_1`, `part_2`, …).
-- Sentences are split on `.`, `!`, `?`, `…`.
+- Sentences are split on `.`, `!`, `?`, `…`; an opening quote mark (`«`,
+  `"`, `“`, `„`, `<<`) that starts its own word also begins a new sentence
+  ("he said: «I want to fix that. Do the same»." → `he said:` /
+  `«I want to fix that.` / `Do the same».`).
 - Words are whitespace-separated; punctuation stays attached.
 - Word units for every language (per-language sets in `src/lib/server/units/`,
   generic rules in `parser.js` `CHUNK_CFG`):

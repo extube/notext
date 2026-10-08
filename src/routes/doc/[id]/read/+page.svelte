@@ -22,17 +22,26 @@
   let selected = $state(null);
   let lookupSeq = 0;
 
-  async function selectWord(word) {
+  async function selectWord(word, sentence) {
     if (!word.trim()) {
       return;
     }
     const seq = ++lookupSeq;
-    selected = { word, translation: null, transcription: null, loading: true };
+    selected = {
+      word,
+      sentence,
+      translation: null,
+      form: null,
+      synonyms: null,
+      part_of_speech: null,
+      loading: true,
+    };
     try {
       const params = new URLSearchParams({
         q: word,
         lang: doc.language,
         to: doc.translate_to || "en",
+        sentence,
       });
       const res = await fetch(`/api/word?${params}`);
       if (!res.ok) {
@@ -84,7 +93,7 @@
               {#if wordIndex > 0 && !isClosingPunct(word)}{' '}{/if}{#if isPunctUnit(word)}<span class="punct">{word}</span>{:else}<button
                 class="word"
                 type="button"
-                onclick={() => selectWord(word)}>{word}</button>{/if}
+                onclick={() => selectWord(word, block.text)}>{word}</button>{/if}
             {/each}
           </p>
         {/if}
@@ -119,6 +128,26 @@
       {:else}
         <span class="muted">{selected.failed ? "Lookup failed" : "No translation found"}</span>
       {/if}
+    </div>
+    {#if !selected.loading && (selected.form || selected.synonyms || selected.part_of_speech)}
+      <div class="popup-details">
+        {#if selected.part_of_speech}
+          <span class="pos-chip">{selected.part_of_speech}</span>
+        {/if}
+        {#if selected.form}
+          <span class="pos-chip">{selected.form}</span>
+        {/if}
+        {#if selected.synonyms}
+          <div class="popup-synonyms">
+            {#each selected.synonyms as synonym}
+              <span class="syn-chip">{synonym}</span>
+            {/each}
+          </div>
+        {/if}
+      </div>
+    {/if}
+    <div class="popup-example">
+      {selected.sentence}
     </div>
   </div>
 {/if}

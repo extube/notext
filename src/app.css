@@ -21,7 +21,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  font-size: 15px;
+  font-size: 17px;
   line-height: 1.55;
   min-height: 100vh;
   display: flex;
@@ -60,6 +60,18 @@ body {
   border-top: 1px solid var(--border);
   color: var(--muted);
   font-size: 0.8rem;
+}
+
+.site-footer a {
+  color: var(--muted);
+}
+
+.site-footer a:hover {
+  color: var(--accent);
+}
+
+.page.narrow {
+  width: min(420px, 100% - 2rem);
 }
 
 /* ---- layout ---- */
@@ -394,6 +406,46 @@ textarea {
   font-size: 0.95rem;
 }
 
+.popup-details {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.pos-chip,
+.syn-chip {
+  display: inline-block;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.1rem 0.6rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin: 0 0.3rem 0.25rem 0;
+}
+
+.pos-chip {
+  color: var(--accent);
+  border-color: var(--accent);
+  align-self: flex-start;
+  width: fit-content;
+}
+
+.popup-meaning,
+.popup-example {
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  font-style: italic;
+  margin-top: 0.5rem;
+}
+
+.popup-synonyms {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
 /* ---- share page ---- */
 
 .link-box {
@@ -427,4 +479,10 @@ textarea {
   line-height: 1.5;
   white-space: pre;
   max-height: 70vh;
+}
+
+/* Selecting page text must not select button labels ("Copy") */
+.copy-btn,
+.begin-test {
+  user-select: none;
 }
