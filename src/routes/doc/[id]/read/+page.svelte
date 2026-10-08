@@ -31,7 +31,7 @@
       word,
       sentence,
       translation: null,
-      meaning: null,
+      form: null,
       synonyms: null,
       part_of_speech: null,
       loading: true,
@@ -129,13 +129,13 @@
         <span class="muted">{selected.failed ? "Lookup failed" : "No translation found"}</span>
       {/if}
     </div>
-    {#if !selected.loading && (selected.meaning || selected.synonyms || selected.part_of_speech)}
+    {#if !selected.loading && (selected.form || selected.synonyms || selected.part_of_speech)}
       <div class="popup-details">
         {#if selected.part_of_speech}
           <span class="pos-chip">{selected.part_of_speech}</span>
         {/if}
-        {#if selected.meaning}
-          <div class="popup-meaning">{selected.meaning}</div>
+        {#if selected.form}
+          <span class="pos-chip">{selected.form}</span>
         {/if}
         {#if selected.synonyms}
           <div class="popup-synonyms">
@@ -146,6 +146,9 @@
         {/if}
       </div>
     {/if}
+    <div class="popup-example">
+      {selected.sentence}
+    </div>
   </div>
 {/if}
 

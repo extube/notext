@@ -4,9 +4,12 @@ import { loadSettings, languageName } from "$lib/server/settings.js";
 const TIMEOUT_MS = 6000;
 const LLM_TIMEOUT_MS = 45000;
 
+/* Trim outer punctuation, keep the whole unit intact — lookup units are
+   often multi-word ("les journaux", "в лесу", "a book"). */
 function stripPunctuation(word) {
-  const m = word.match(/^[\p{L}\p{M}''’-]+/u);
-  return m ? m[0] : "";
+  return (word || "")
+    .replace(/^[^\p{L}\p{M}''’]+/u, "")
+    .replace(/[^\p{L}\p{M}''’]+$/u, "");
 }
 
 function baseCode(lang) {
@@ -61,14 +64,15 @@ async function lookupWithLLM(word, sentence, from, to) {
   const url = `http://${host}:${port}/v1/chat/completions`;
 
   const schema =
-    '{"translation": string, "meaning": string, "synonyms": string[], "part_of_speech": string}';
+    '{"translation": string, "part_of_speech": string, "form": string, "synonyms": string[]}';
   const system =
     `You look up a word in context and reply with STRICT JSON only — no markdown, no prose. ` +
     `JSON schema: ${schema}. Rules: 'translation' translates the word to ${languageName(to)} ` +
-    `(empty string if unknown); 'meaning' is a short description of what the word means in ` +
-    `this exact sentence in ${languageName(from)} (empty string if unknown); 'synonyms' is an ` +
-    `array of synonyms or empty array; 'part_of_speech' is the part of speech in the sentence ` +
-    `(empty string if unknown).`;
+    `(empty string if unknown); 'part_of_speech' is the part of speech of the word in the ` +
+    `sentence (empty string if unknown); 'form' is the grammatical form the word takes in ` +
+    `this sentence, e.g. "plural", "past tense", "prepositional case" (empty string if ` +
+    `unknown); 'synonyms' is an array of synonyms or empty array. Verify you output exactly ` +
+    `the four keys and nothing else.`;
   const user =
     `Text language: ${languageName(from)}\n` +
     `Translating to: ${languageName(to)}\n` +
@@ -115,7 +119,7 @@ function validateLLMJson(obj) {
   if (typeof obj.translation !== "string") {
     throw new Error("JSON field 'translation' missing");
   }
-  for (const field of ["meaning", "part_of_speech"]) {
+  for (const field of ["part_of_speech", "form"]) {
     if (obj[field] !== undefined && typeof obj[field] !== "string") {
       throw new Error(`JSON field '${field}' must be a string`);
     }
@@ -127,9 +131,9 @@ function validateLLMJson(obj) {
   }
   return {
     translation: obj.translation || null,
-    meaning: obj.meaning || null,
-    synonyms: obj.synonyms?.length ? obj.synonyms : null,
     part_of_speech: obj.part_of_speech || null,
+    form: obj.form || null,
+    synonyms: obj.synonyms?.length ? obj.synonyms : null,
   };
 }
 
