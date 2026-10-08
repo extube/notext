@@ -46,6 +46,13 @@ const SENTENCE_RE = /[^.!?…]+[.!?…]+[)"'»”\]]*|[^.!?…]+/g;
    "he said:" | "«I want...»". Closing marks never split. */
 const OPEN_QUOTE_RE = /[«"“„]|<</g;
 
+/* "@/»: contains no letters or digits — a dangling closing mark. */
+const PUNCT_ONLY_RE = /^[^\p{L}\p{N}]+$/u;
+
+function isPunctOnly(text) {
+  return PUNCT_ONLY_RE.test(text.replace(/\s+/g, ""));
+}
+
 function reSplitQuotes(sentence) {
   const pieces = [];
   let start = 0;
@@ -65,18 +72,37 @@ function reSplitQuotes(sentence) {
 }
 
 export function splitParts(text) {
-  return text
+  const raw = text
     .split(/\n\s*\n+/)
     .map((part) => part.trim())
     .filter(Boolean);
+  // "…les yeux.\n\n»" — a bare closing mark belongs to the previous part,
+  // otherwise it would live as a whole (empty) part of its own
+  return raw.reduce((parts, part) => {
+    if (parts.length && isPunctOnly(part)) {
+      parts[parts.length - 1] += ` ${part}`;
+    } else {
+      parts.push(part);
+    }
+    return parts;
+  }, []);
 }
 
 export function splitSentences(part) {
   const raw = part.match(SENTENCE_RE) || [];
-  return raw
+  const pieces = raw
     .flatMap(reSplitQuotes)
     .map((s) => s.trim())
     .filter(Boolean);
+  // same for a punctuation-only sentence inside one part
+  return pieces.reduce((sentences, piece) => {
+    if (sentences.length && isPunctOnly(piece)) {
+      sentences[sentences.length - 1] += ` ${piece}`;
+    } else {
+      sentences.push(piece);
+    }
+    return sentences;
+  }, []);
 }
 
 export function splitWords(sentence) {
