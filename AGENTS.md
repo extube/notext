@@ -50,7 +50,7 @@ src/lib/
   languages.js      # shared 7-language list
 svelte.config.js    # @sveltejs/adapter-node
 src/app.css         # minimal dark theme (near-black surfaces, one green accent)
-data/               # file storage: data/<base64_id>.json per document, data/links/<link_id> → doc id, data/settings.json (LLM providers), all gitignored
+data/               # file storage: data/<base64_id>.json per document, data/links/<link_id> → doc id (gitignored)
 ```
 
 Keep `src/lib/server/parser.js` DOM-free and pure so it stays testable from
