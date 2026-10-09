@@ -8,17 +8,33 @@ export async function load() {
 export const actions = {
   default: async ({ request }) => {
     const form = await request.formData();
-    const host = (form.get("llm_host") || "").trim();
-    const port = (form.get("llm_port") || "").trim();
+    const values = {
+      llm_host: (form.get("llm_host") || "").trim(),
+      llm_port: (form.get("llm_port") || "").trim(),
+      llm_key: (form.get("llm_key") || "").trim(),
+      llm_model: (form.get("llm_model") || "").trim(),
+    };
 
-    if (!host) {
-      return fail(400, { error: "Host is required", values: { host, port } });
-    }
-    if (!/^\d{1,5}$/.test(port) || Number(port) < 1 || Number(port) > 65535) {
-      return fail(400, { error: "Port must be a number 1–65535", values: { host, port } });
+    if (values.llm_host) {
+      if (!/^\d{1,5}$/.test(values.llm_port) ||
+          Number(values.llm_port) < 1 || Number(values.llm_port) > 65535) {
+        return fail(400, { error: "Port must be a number 1–65535", values });
+      }
+    } else {
+      // no host — the site provider is disabled entirely
+      values.llm_port = "";
+      values.llm_key = "";
+      values.llm_model = "";
     }
 
-    const settings = saveSettings({ llm: { host, port } });
+    const settings = saveSettings({
+      llm: {
+        host: values.llm_host,
+        port: values.llm_port,
+        key: values.llm_key,
+        model: values.llm_model,
+      },
+    });
     return { ok: true, settings };
   },
 };

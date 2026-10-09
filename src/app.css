@@ -390,6 +390,16 @@ textarea {
   border-color: var(--accent);
 }
 
+.popup-alert {
+  margin-bottom: 0.5rem;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: rgb(139 0 0 / 0.25);
+  color: var(--accent);
+  font-size: 0.85rem;
+  padding: 0.4rem 0.6rem;
+}
+
 .popup-word {
   font-size: 1.05rem;
   font-weight: 600;
