@@ -1,5 +1,6 @@
 <script>
   import { joinWords, isPunctUnit, isClosingPunct } from "$lib/text.js";
+  import { chatLookup } from "$lib/llm.js";
 
   let { data } = $props();
 
@@ -22,6 +23,26 @@
   let selected = $state(null);
   let lookupSeq = 0;
 
+  /* A user's own LLM API lives in this browser (localStorage). When set,
+     lookups go straight from the browser to it — nothing through the
+     site server. */
+  function userProvider() {
+    try {
+      const saved = JSON.parse(localStorage.getItem("nt.user_llm") || "null");
+      return saved?.base ? saved : null;
+    } catch {
+      return null;
+    }
+  }
+
+  async function apiLookup(params) {
+    const res = await fetch(`/api/word?${params}`);
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+    return res.json();
+  }
+
   async function selectWord(word, sentence) {
     if (!word.trim()) {
       return;
@@ -34,20 +55,39 @@
       form: null,
       synonyms: null,
       part_of_speech: null,
+      alert: "",
       loading: true,
     };
     try {
-      const params = new URLSearchParams({
+      let info;
+      const query = new URLSearchParams({
         q: word,
         lang: doc.language,
         to: doc.translate_to || "en",
         sentence,
       });
-      const res = await fetch(`/api/word?${params}`);
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
+      const provider = userProvider();
+      if (provider) {
+        try {
+          info = await chatLookup(
+            provider,
+            word,
+            sentence,
+            doc.language,
+            doc.translate_to || "en",
+          );
+        } catch {
+          // the user's endpoint is unreachable: tell them, fall back to
+          // the site services so the popup still shows something
+          if (seq !== lookupSeq) {
+            return;
+          }
+          selected = { ...selected, alert: "No connection to your API" };
+        }
       }
-      const info = await res.json();
+      if (!info) {
+        info = await apiLookup(query);
+      }
       if (seq === lookupSeq) {
         selected = { ...selected, ...info, loading: false };
       }
@@ -110,6 +150,9 @@
     <button class="popup-close" type="button" aria-label="Close" onclick={closePopup}>
       ×
     </button>
+    {#if selected.alert}
+      <p class="popup-alert" role="alert">{selected.alert}</p>
+    {/if}
     <div class="popup-word">{selected.word}</div>
     <div class="popup-transcription">
       {#if selected.loading}

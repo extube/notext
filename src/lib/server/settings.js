@@ -3,8 +3,10 @@ import path from "node:path";
 
 const SETTINGS_PATH = path.join(process.cwd(), "data", "settings.json");
 
+/* Site-managed LLM provider. No host by default — the services fallback
+   (MyMemory / Wiktionary) covers lookups until the owner configures one. */
 const DEFAULTS = {
-  llm: { host: "localhost", port: "8000" },
+  llm: { host: "", port: "", key: "", model: "" },
 };
 
 export function loadSettings() {
@@ -14,6 +16,8 @@ export function loadSettings() {
       llm: {
         host: raw?.llm?.host || DEFAULTS.llm.host,
         port: raw?.llm?.port || DEFAULTS.llm.port,
+        key: raw?.llm?.key || DEFAULTS.llm.key,
+        model: raw?.llm?.model || DEFAULTS.llm.model,
       },
     };
   } catch {
@@ -33,15 +37,15 @@ export function saveSettings(partial) {
 
 /* Maps language codes to clear names for the translation prompt. */
 export function languageName(code) {
-  const codeBase = (code || "").split("-")[0].toLowerCase();
-  const NAMES = {
-    ru: "Russian",
-    fr: "French",
-    "en-gb": "English (UK)",
-    "en-us": "English (US)",
-    es: "Spanish",
-    it: "Italian",
-    de: "German",
-  };
-  return NAMES[codeBase] || code || "";
+  return NAMES[(code || "").toLowerCase()] || code || "";
 }
+
+const NAMES = {
+  ru: "Russian",
+  fr: "French",
+  "en-gb": "English (UK)",
+  "en-us": "English (US)",
+  es: "Spanish",
+  it: "Italian",
+  de: "German",
+};

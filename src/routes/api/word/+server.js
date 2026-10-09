@@ -1,5 +1,6 @@
 import { json } from "@sveltejs/kit";
-import { loadSettings, languageName } from "$lib/server/settings.js";
+import { loadSettings } from "$lib/server/settings.js";
+import { chatLookup, detectModel } from "$lib/llm.js";
 
 const TIMEOUT_MS = 6000;
 const LLM_TIMEOUT_MS = 45000;
@@ -24,117 +25,26 @@ async function fetchJson(url, timeout = TIMEOUT_MS) {
   return res.json();
 }
 
-async function fetchText(url, body, timeout = LLM_TIMEOUT_MS) {
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
-    signal: AbortSignal.timeout(timeout),
-  });
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status}`);
+/* Site-managed provider from data/settings.json: host + port, optional
+   API key and model. Server-side only — the key never reaches clients. */
+async function siteProvider(settings) {
+  if (!settings.llm.host) {
+    return null;
   }
-  return res.text();
-}
-
-/* Local OpenAI-compatible LLM: llama.cpp, vLLM, OVMS, LM Studio… The model
-   id must match the server's; pick the first entry of /v1/models and fall
-   back to a neutral name (llama.cpp ignores the id). */
-async function resolveModelId(settings) {
-  const { host, port } = settings.llm;
-  try {
-    const data = await fetchJson(
-      `http://${host}:${port}/v1/models`,
-      5000,
-    );
-    const id = data?.data?.[0]?.id;
-    if (id) {
-      return id;
-    }
-  } catch {
-    // fall through to the default id
-  }
-  return "local-model";
-}
-
-async function lookupWithLLM(word, sentence, from, to) {
-  const settings = loadSettings();
-  const model = await resolveModelId(settings);
-  const { host, port } = settings.llm;
-  const url = `http://${host}:${port}/v1/chat/completions`;
-
-  const schema =
-    '{"translation": string, "part_of_speech": string, "form": string, "synonyms": string[]}';
-  const system =
-    `You look up a word in context and reply with STRICT JSON only — no markdown, no prose. ` +
-    `JSON schema: ${schema}. Rules: 'translation' translates the word to ${languageName(to)} ` +
-    `(empty string if unknown); 'part_of_speech' is the part of speech of the word in the ` +
-    `sentence (empty string if unknown); 'form' is the grammatical form the word takes in ` +
-    `this sentence, e.g. "plural", "past tense", "prepositional case" (empty string if ` +
-    `unknown); 'synonyms' is an array of synonyms or empty array. Verify you output exactly ` +
-    `the four keys and nothing else.`;
-  const user =
-    `Text language: ${languageName(from)}\n` +
-    `Translating to: ${languageName(to)}\n` +
-    `Sentence: ${sentence}\n` +
-    `Word: ${word}`;
-
-  const body = {
+  const { host, port, key, model } = settings.llm;
+  const provider = {
+    base: `http://${host}:${port}/v1`,
+    key,
     model,
-    stream: false,
-    temperature: 0,
-    max_tokens: 400,
-    messages: [
-      { role: "system", content: system },
-      { role: "user", content: user },
-    ],
   };
-
-  const content = JSON.parse(await fetchText(url, body)).choices?.[0]?.message?.content;
-  if (!content) {
-    throw new Error("LLM returned no content");
-  }
-  return validateLLMJson(parseLooseJson(content));
-}
-
-/* Models love markdown fences; exact-JSON extraction: outermost object. */
-function parseLooseJson(content) {
-  const text = content.replace(/```json|```/gi, "").trim();
-  try {
-    return JSON.parse(text);
-  } catch {
-    const start = text.indexOf("{");
-    const end = text.lastIndexOf("}");
-    if (start === -1 || end <= start) {
-      throw new Error("No JSON object found");
-    }
-    return JSON.parse(text.slice(start, end + 1));
-  }
-}
-
-function validateLLMJson(obj) {
-  if (!obj || typeof obj !== "object") {
-    throw new Error("JSON is not an object");
-  }
-  if (typeof obj.translation !== "string") {
-    throw new Error("JSON field 'translation' missing");
-  }
-  for (const field of ["part_of_speech", "form"]) {
-    if (obj[field] !== undefined && typeof obj[field] !== "string") {
-      throw new Error(`JSON field '${field}' must be a string`);
+  if (!model) {
+    try {
+      provider.model = await detectModel({ base: provider.base, key });
+    } catch (error) {
+      console.error(`model detection failed: ${error.message}`);
     }
   }
-  if (obj.synonyms !== undefined) {
-    if (!Array.isArray(obj.synonyms) || obj.synonyms.some((s) => typeof s !== "string")) {
-      throw new Error("JSON field 'synonyms' must be a string array");
-    }
-  }
-  return {
-    translation: obj.translation || null,
-    part_of_speech: obj.part_of_speech || null,
-    form: obj.form || null,
-    synonyms: obj.synonyms?.length ? obj.synonyms : null,
-  };
+  return provider;
 }
 
 async function translate(word, from, to) {
@@ -229,14 +139,16 @@ export async function GET({ url, setHeaders }) {
     return json({ translation: null, transcription: null });
   }
 
-  // local LLM first: it handles whole units (multi-word) and context
   if (sentence) {
-    try {
-      const llm = await lookupWithLLM(word, sentence, from, to);
-      const transcription = await transcribe(word, from);
-      return json({ word, ...llm, transcription, source: "local-llm" });
-    } catch (error) {
-      console.error(`local LLM lookup failed: ${error.message}`);
+    const provider = await siteProvider(loadSettings());
+    if (provider) {
+      try {
+        const llm = await chatLookup(provider, word, sentence, from, to, LLM_TIMEOUT_MS);
+        const transcription = await transcribe(word, from);
+        return json({ word, ...llm, transcription, source: provider.model });
+      } catch (error) {
+        console.error(`LLM lookup failed (${provider.model}): ${error.message}`);
+      }
     }
   }
 
