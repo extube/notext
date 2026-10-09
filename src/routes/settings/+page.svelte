@@ -1,17 +1,9 @@
 <script>
   import { detectModel } from "$lib/llm.js";
 
-  let { data, form } = $props();
-
-  /* Server section values: current saved values, or the values the server
-     echoed back after a failed submit. */
-  const host = $derived(form?.values?.llm_host ?? data.settings.llm.host);
-  const port = $derived(form?.values?.llm_port ?? data.settings.llm.port);
-  const key = $derived(form?.values?.llm_key ?? data.settings.llm.key);
-  const siteModel = $derived(form?.values?.llm_model ?? data.settings.llm.model);
-
-  /* User provider lives in this browser only (localStorage), never sent
-     to the server. */
+  /* The site LLM server (settings.json) is owner-managed — users can only
+     configure their own API, stored in this browser (localStorage), never
+     sent to the server. */
   const USER_LLM_KEY = "nt.user_llm";
   let userBase = $state("");
   let userKey = $state("");
@@ -160,47 +152,6 @@
       <button type="button" class="btn primary" onclick={saveUserProvider}>Save</button>
     </div>
   </div>
-
-  <form class="card" method="POST">
-    <h2 class="part-title">Site LLM server</h2>
-    <p class="muted">
-      Default provider for every visitor without their own API — runs on the
-      server, configured here (data/settings.json). Empty by default: lookups
-      then fall back to free translation services.
-    </p>
-
-    {#if form?.error}
-      <p class="status error">{form.error}</p>
-    {/if}
-    {#if form?.ok}
-      <p class="status ok">Saved</p>
-    {/if}
-
-    <div class="row">
-      <div class="field">
-        <label for="llm_host">Host</label>
-        <input type="text" id="llm_host" name="llm_host" value={host} placeholder="empty — off" />
-      </div>
-      <div class="field">
-        <label for="llm_port">Port</label>
-        <input type="text" id="llm_port" name="llm_port" inputmode="numeric" value={port} placeholder="8000" />
-      </div>
-    </div>
-    <div class="row">
-      <div class="field">
-        <label for="llm_key">API token (optional)</label>
-        <input type="password" id="llm_key" name="llm_key" value={key} placeholder="empty — no token" autocomplete="off" />
-      </div>
-      <div class="field">
-        <label for="llm_model">Model (optional)</label>
-        <input type="text" id="llm_model" name="llm_model" value={siteModel} placeholder="auto-detect from the API" autocomplete="off" />
-      </div>
-    </div>
-
-    <div class="actions">
-      <button type="submit" class="btn primary">Save</button>
-    </div>
-  </form>
 </main>
 
 <footer class="site-footer">

@@ -14,7 +14,8 @@ export function buildPrompt(word, sentence, from, to) {
     `if unknown); 'part_of_speech' is the part of speech of the word in the sentence (empty ` +
     `string if unknown); 'form' is the grammatical form the word takes in this sentence, e.g. ` +
     `"plural", "past tense", "prepositional case" (empty string if unknown); 'synonyms' is an ` +
-    `array of synonyms or empty array. Verify you output exactly the four keys and nothing else.`;
+    `array of synonyms or empty array — synonyms must be words of the text language ${FROM}, ` +
+    `never of ${TO}. Verify you output exactly the four keys and nothing else.`;
   const user =
     `Text language: ${FROM}\n` +
     `Translating to: ${TO}\n` +
