@@ -1,6 +1,6 @@
 import { json } from "@sveltejs/kit";
-import { loadSettings } from "$lib/server/settings.js";
-import { chatLookup, detectModel } from "$lib/llm.js";
+import { siteProvider } from "$lib/server/llm-site.js";
+import { chatLookup } from "$lib/llm.js";
 
 const TIMEOUT_MS = 6000;
 const LLM_TIMEOUT_MS = 45000;
@@ -23,28 +23,6 @@ async function fetchJson(url, timeout = TIMEOUT_MS) {
     throw new Error(`HTTP ${res.status}`);
   }
   return res.json();
-}
-
-/* Site-managed provider from data/settings.json: host + port, optional
-   API key and model. Server-side only — the key never reaches clients. */
-async function siteProvider(settings) {
-  if (!settings.llm.host) {
-    return null;
-  }
-  const { host, port, key, model } = settings.llm;
-  const provider = {
-    base: `http://${host}:${port}/v1`,
-    key,
-    model,
-  };
-  if (!model) {
-    try {
-      provider.model = await detectModel({ base: provider.base, key });
-    } catch (error) {
-      console.error(`model detection failed: ${error.message}`);
-    }
-  }
-  return provider;
 }
 
 async function translate(word, from, to) {
@@ -140,7 +118,7 @@ export async function GET({ url, setHeaders }) {
   }
 
   if (sentence) {
-    const provider = await siteProvider(loadSettings());
+    const provider = await siteProvider();
     if (provider) {
       try {
         const llm = await chatLookup(provider, word, sentence, from, to, LLM_TIMEOUT_MS);

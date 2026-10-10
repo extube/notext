@@ -97,6 +97,11 @@ Parsing output is a JSON object consumed by the learning workflow:
   joins keep the original spelling.
 - Supported languages: Russian, French, English (UK), English (US), Spanish,
   Italian, German.
+- Documents may also carry a `test` block (optional, written by test pages):
+  `understanding: { part, source, created, quiz }` — the cached comprehension
+  quiz; `source` is the generating model or `deterministic` (offline
+  fallback). Users' own LLM APIs live client-side; the site provider is
+  `data/settings.json` only (owner-managed, never exposed in the UI).
 
 ## Conventions
 

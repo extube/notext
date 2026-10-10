@@ -456,8 +456,96 @@ textarea {
   align-items: center;
 }
 
-/* ---- share page ---- */
+/* ---- test parts / understanding quiz ---- */
 
+.test-part {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  margin: 0.75rem 0;
+  color: var(--text);
+  transition: border-color 0.15s ease;
+}
+
+.test-part:hover {
+  border-color: var(--accent);
+}
+
+.test-part strong {
+  color: var(--accent);
+}
+
+.begin-arrow {
+  color: var(--accent);
+  font-size: 1.2rem;
+}
+
+.quiz-q {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem 0.9rem;
+  margin-bottom: 0.75rem;
+}
+
+.quiz-q strong {
+  font-size: 0.85rem;
+}
+
+.quiz-q.correct {
+  border-color: var(--accent);
+}
+
+.quiz-q.incorrect {
+  border-color: var(--accent);
+  background: rgb(139 0 0 / 0.18);
+}
+
+.q-text {
+  margin: 0.35rem 0 0.5rem;
+  line-height: 1.5;
+}
+
+.quiz-meta {
+  font-size: 0.8rem;
+}
+
+.opt {
+  display: block;
+  padding: 0.25rem 0;
+  cursor: pointer;
+}
+
+.opt input {
+  accent-color: var(--accent);
+  margin-right: 0.45rem;
+}
+
+.answer-line {
+  font-size: 0.85rem;
+}
+
+.field-input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.65rem;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.field-input:focus {
+  border-color: var(--accent);
+}
+
+/* ---- share page ---- */
 .link-box {
   width: 100%;
   margin-top: 1rem;

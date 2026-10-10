@@ -22,6 +22,18 @@ export function loadDoc(id) {
   }
 }
 
+/* Shallow-merge top-level fields into an existing document. */
+export function patchDoc(id, patch) {
+  const raw = loadDoc(id);
+  if (raw === null) {
+    return null;
+  }
+  const doc = JSON.parse(raw);
+  Object.assign(doc, patch);
+  fs.writeFileSync(path.join(DATA_DIR, `${id}.json`), JSON.stringify(doc, null, 2));
+  return doc;
+}
+
 export function findOrCreateLink(docId) {
   fs.mkdirSync(LINKS_DIR, { recursive: true });
   for (const entry of fs.readdirSync(LINKS_DIR)) {
