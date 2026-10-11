@@ -76,6 +76,21 @@ export function nowCreated() {
   return new Date().toISOString().slice(0, 10);
 }
 
+/* Solved-round score handed over from the browser: {correct, total}. */
+export function readScore(body) {
+  const score = body?.score;
+  if (!score) {
+    return null;
+  }
+  const correct = Number(score.correct);
+  const total = Number(score.total);
+  if (!Number.isInteger(correct) || !Number.isInteger(total) ||
+      total < 1 || total > 100 || correct < 0 || correct > total) {
+    throw new Error("Invalid score payload");
+  }
+  return { correct, total };
+}
+
 /* Sentences of the doc in reading order (deduped, case-insensitive). */
 export function docSentences(doc) {
   const seen = new Set();

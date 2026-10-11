@@ -6,6 +6,7 @@ import {
   loadParsedDoc,
   nowCreated,
   readRequest,
+  readScore,
   storeEntry,
 } from "$lib/server/testpart.js";
 import {
@@ -37,6 +38,22 @@ export async function POST({ request, url }) {
   const doc = loadParsedDoc(id);
   if (doc === null) {
     return json({ error: "Document not found" }, { status: 404 });
+  }
+
+  // solved-round score from the browser (statistics for the result page)
+  try {
+    const score = readScore(body);
+    if (score) {
+      const existing_ = doc.test?.events;
+      if (existing_?.true?.length && existing_?.false?.length) {
+        const entry = { ...existing_, score };
+        storeEntry(id, doc, "events", entry);
+        return json(entry);
+      }
+      return json({ error: "Part not built yet" }, { status: 400 });
+    }
+  } catch (error) {
+    return json({ error: error.message }, { status: 400 });
   }
 
   // sentences generated in this browser through the user's own LLM

@@ -493,6 +493,43 @@ textarea {
   color: var(--accent);
 }
 
+/* result page: per-part percent statistics */
+.score-row {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 0.9rem;
+  padding: 0.85rem 1rem;
+}
+
+.score-row strong {
+  color: var(--accent);
+}
+
+/* big percent, colored by the amount of correct answers */
+.score-big {
+  display: block;
+  font-size: clamp(2.6rem, 6vw, 3.4rem);
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.score-big.pct-high {
+  color: var(--accent);
+}
+
+.score-big.pct-mid {
+  color: rgb(219 143 45);
+}
+
+.score-big.pct-low {
+  color: rgb(197 74 74);
+}
+
+.score-line {
+  margin-top: 0.15rem;
+}
+
+
 .quiz-q {
   border: 1px solid var(--border);
   border-radius: 8px;

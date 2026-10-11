@@ -61,6 +61,12 @@
     });
     graded = { score, total: items.length, results };
     status = "summary";
+    // the per-part percent feeds the result page statistics
+    fetch("/api/test/events", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id: data.id, score: { correct: score, total: items.length } }),
+    }).catch(() => {});
   }
 </script>
 
