@@ -208,41 +208,90 @@ export function eventsPrompt(text, to) {
   return { system, user };
 }
 
+/* A sentence is duplicated when it differs only by punctuation/apostrophes
+   or shares ~80% of its words (Levenshtein on the folded keys). */
+export function foldKey(text) {
+  return (text || "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+}
+
+function levDistance(a, b) {
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) {
+      cur[j] = Math.min(
+        prev[j] + 1,
+        cur[j - 1] + 1,
+        prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
+      );
+    }
+    prev = cur;
+  }
+  return prev[b.length];
+}
+
+export function nearDuplicate(a, b) {
+  const ka = foldKey(a);
+  const kb = foldKey(b);
+  if (!ka || !kb) {
+    return false;
+  }
+  if (ka === kb) {
+    return true;
+  }
+  const ta = new Set(ka.split(" "));
+  const tb = new Set(kb.split(" "));
+  let inter = 0;
+  for (const t of ta) {
+    if (tb.has(t)) {
+      inter += 1;
+    }
+  }
+  const union = ta.size + tb.size - inter;
+  if (union && inter / union >= 0.8) {
+    return true;
+  }
+  const dist = levDistance(ka, kb);
+  return dist <= 0.15 * Math.max(ka.length, kb.length);
+}
+
 export function validateEvents(obj) {
   const truthy = Array.isArray(obj) ? obj : obj?.true;
   const falsy = obj?.false;
   if (!Array.isArray(truthy) || !Array.isArray(falsy)) {
     throw new Error("No true/false arrays");
   }
-  const clean = (items, limit) => {
-    const seen = new Set();
-    const out = [];
-    for (const s of items) {
-      if (typeof s !== "string" || !s.trim()) {
-        continue;
-      }
-      const key = s.trim().toLowerCase();
-      if (seen.has(key)) {
-        continue;
-      }
-      seen.add(key);
-      out.push(s.trim());
-      if (out.length >= limit) {
+  const truth = [];
+  for (const s of truthy) {
+    if (typeof s === "string" && s.trim() &&
+        !truth.some((t) => nearDuplicate(t, s))) {
+      truth.push(s.trim());
+      if (truth.length >= 6) {
         break;
       }
     }
-    return out;
-  };
-  const truth = clean(truthy, 6);
-  const falseItems = clean(falsy, 6);
-  if (truth.length < 2 || falseItems.length < 2) {
-    throw new Error("Need at least 2 sentences in each array");
   }
-  const overlap = truth.some((s) =>
-    falseItems.some((f) => f.toLowerCase() === s.toLowerCase()),
-  );
-  if (overlap) {
-    throw new Error("A sentence appears in both arrays");
+  // false sentences that repeat a true one (even with other wording or a
+  // swapped apostrophe) would give the same phrase two different answers
+  const falseItems = [];
+  for (const s of falsy) {
+    if (typeof s !== "string" || !s.trim()) {
+      continue;
+    }
+    if (truth.some((t) => nearDuplicate(t, s)) ||
+        falseItems.some((f) => nearDuplicate(f, s))) {
+      continue;
+    }
+    falseItems.push(s.trim());
+    if (falseItems.length >= 6) {
+      break;
+    }
+  }
+  if (truth.length < 2) {
+    throw new Error("Need at least 2 distinct true sentences");
+  }
+  if (falseItems.length < 2) {
+    throw new Error("Need at least 2 distinct false sentences");
   }
   return { true: truth, false: falseItems };
 }

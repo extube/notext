@@ -1,5 +1,5 @@
 <script>
-  import { chatCall, detectModel, eventsPrompt, parseLooseJson, validateEvents } from "$lib/llm.js";
+  import { chatCall, detectModel, eventsPrompt, nearDuplicate, parseLooseJson, validateEvents } from "$lib/llm.js";
 
   let { data } = $props();
 
@@ -25,7 +25,9 @@
 
   function deal() {
     const truth = entry.true;
-    const falsy = entry.false;
+    // stored entries from an older generation may hold the same sentence on
+    // both sides — those must not end up in one round with two answers
+    const falsy = entry.false.filter((f) => !truth.some((t) => nearDuplicate(t, f)));
     // 6 statements with a random number of true ones — at least one of each
     const maxTrue = Math.min(5, truth.length);
     const minTrue = Math.max(1, 6 - falsy.length);
