@@ -456,7 +456,7 @@ textarea {
   align-items: center;
 }
 
-/* ---- test parts ---- */
+/* ---- test parts / understanding quiz ---- */
 
 .test-part {
   display: flex;
@@ -483,52 +483,6 @@ textarea {
   color: var(--accent);
   font-size: 1.2rem;
 }
-
-/* one-time setup on the test menu: progress per part */
-.setup-step {
-  font-size: 0.9rem;
-}
-
-.setup-step.done {
-  color: var(--accent);
-}
-
-/* result page: per-part percent statistics */
-.score-row {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  margin-bottom: 0.9rem;
-  padding: 0.85rem 1rem;
-}
-
-.score-row strong {
-  color: var(--accent);
-}
-
-/* big percent, colored by the amount of correct answers */
-.score-big {
-  display: block;
-  font-size: clamp(2.6rem, 6vw, 3.4rem);
-  font-weight: 600;
-  line-height: 1.1;
-}
-
-.score-big.pct-high {
-  color: var(--accent);
-}
-
-.score-big.pct-mid {
-  color: rgb(219 143 45);
-}
-
-.score-big.pct-low {
-  color: rgb(197 74 74);
-}
-
-.score-line {
-  margin-top: 0.15rem;
-}
-
 
 .quiz-q {
   border: 1px solid var(--border);
@@ -573,56 +527,6 @@ textarea {
 .answer-line {
   font-size: 0.85rem;
 }
-
-/* order part: numbered rows with up/down reordering */
-.order-q {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.order-q .q-text {
-  flex: 1;
-  margin: 0;
-}
-
-.order-n {
-  color: var(--accent);
-  font-variant-numeric: tabular-nums;
-  min-width: 1.4rem;
-  text-align: right;
-}
-
-.order-btns {
-  display: flex;
-  gap: 0.3rem;
-}
-
-.order-btn {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text);
-  cursor: pointer;
-  font: inherit;
-  padding: 0.25rem 0.55rem;
-}
-
-.order-btn:hover:enabled {
-  border-color: var(--accent);
-}
-
-.order-btn:disabled {
-  opacity: 0.35;
-  cursor: default;
-}
-
-/* events part: true/false radios side by side */
-.tf-pick {
-  display: flex;
-  gap: 1.5rem;
-}
-
 
 .field-input {
   width: 100%;
