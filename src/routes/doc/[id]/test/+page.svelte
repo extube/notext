@@ -16,9 +16,6 @@
       <a class="btn" href="/doc/{data.id}/read">Back</a>
       <a class="btn primary" href="/doc/{data.id}/test/preparing">Start solving</a>
     </div>
-    <div class="actions">
-      <a class="btn" href="/doc/{data.id}/test/result">Results</a>
-    </div>
   </div>
 </main>
 
