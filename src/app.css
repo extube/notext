@@ -456,7 +456,7 @@ textarea {
   align-items: center;
 }
 
-/* ---- test parts / understanding quiz ---- */
+/* ---- test parts ---- */
 
 .test-part {
   display: flex;
@@ -527,6 +527,56 @@ textarea {
 .answer-line {
   font-size: 0.85rem;
 }
+
+/* order part: numbered rows with up/down reordering */
+.order-q {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.order-q .q-text {
+  flex: 1;
+  margin: 0;
+}
+
+.order-n {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  min-width: 1.4rem;
+  text-align: right;
+}
+
+.order-btns {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.order-btn {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  padding: 0.25rem 0.55rem;
+}
+
+.order-btn:hover:enabled {
+  border-color: var(--accent);
+}
+
+.order-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* events part: true/false radios side by side */
+.tf-pick {
+  display: flex;
+  gap: 1.5rem;
+}
+
 
 .field-input {
   width: 100%;

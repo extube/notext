@@ -12,6 +12,6 @@ export async function load({ params }) {
     title: doc.title || "Untitled",
     language: doc.language,
     to: doc.translate_to || doc.language,
-    quiz: doc.test?.understanding ?? null,
+    entry: doc.test?.order ?? null,
   };
 }
