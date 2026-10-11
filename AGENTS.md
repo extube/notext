@@ -101,8 +101,11 @@ Parsing output is a JSON object consumed by the learning workflow:
   `order: { part, source, created, points[] }` (points in true text order,
   shuffling happens client-side) and `events: { part, source, created,
   true[6], false[6] }` (a round shows 6 statements with a random true/false
-  mix); `source` is the generating model or `deterministic` (offline
-  fallback). Users' own LLM APIs live client-side; the site provider is
+  mix); both parts are built once on the `/test` menu (visible per-part
+  progress) and stored together in the doc json — part pages only open what
+  is stored; `source` is the generating model or `deterministic` (offline
+  fallback; the browser upgrades a fallback through the user's own LLM when
+  configured). Users' own LLM APIs live client-side; the site provider is
   `data/settings.json` only (owner-managed, never exposed in the UI).
 
 ## Conventions

@@ -484,6 +484,15 @@ textarea {
   font-size: 1.2rem;
 }
 
+/* one-time setup on the test menu: progress per part */
+.setup-step {
+  font-size: 0.9rem;
+}
+
+.setup-step.done {
+  color: var(--accent);
+}
+
 .quiz-q {
   border: 1px solid var(--border);
   border-radius: 8px;

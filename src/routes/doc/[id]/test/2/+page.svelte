@@ -1,19 +1,16 @@
 <script>
-  import { chatCall, detectModel, eventsPrompt, nearDuplicate, parseLooseJson, validateEvents } from "$lib/llm.js";
+  import { nearDuplicate } from "$lib/llm.js";
 
   let { data } = $props();
 
-  /* Stored entry: { part: "events", source, created, true: [...6], false: [...6] }.
-     A round takes 6 sentences with a random mix of true/false items. State:
-     generating → answering → summary. */
+  /* Everything was built once by the test menu and comes from load();
+     a round takes 6 statements with a random mix of true/false items. */
   let entry = $state(data.entry);
-  let status = $state(data.entry ? "answering" : "generating");
+  let status = $state("answering");
   let notice = $state("");
   let items = $state([]);
   let picked = $state([]);
   let graded = $state(null);
-
-  const GENERATE_TIMEOUT_MS = 120000;
 
   function shuffle(list) {
     for (let i = list.length - 1; i > 0; i--) {
@@ -41,86 +38,6 @@
     ]);
     picked = items.map(() => null);
     graded = null;
-  }
-
-  function offer(info) {
-    entry = { ...info };
-    deal();
-    status = "answering";
-  }
-
-  async function request(body) {
-    const res = await fetch("/api/test/events", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ id: data.id, ...body }),
-    });
-    const info = await res.json();
-    if (!res.ok) {
-      throw new Error(info.error || `HTTP ${res.status}`);
-    }
-    return info;
-  }
-
-  /* A user's own LLM API lives in this browser — generation through it
-     happens only here, never on the site server. */
-  function userProvider() {
-    try {
-      const saved = JSON.parse(localStorage.getItem("nt.user_llm") || "null");
-      return saved?.base ? saved : null;
-    } catch {
-      return null;
-    }
-  }
-
-  async function ensure() {
-    try {
-      const info = await request({});
-      // the server had no LLM → deterministic fallback; upgrade it through
-      // the user's own API when configured
-      if (info.fallback) {
-        const provider = userProvider();
-        if (provider) {
-          try {
-            const prompt = eventsPrompt(info.text, data.to);
-            const model = provider.model || (await detectModel(provider));
-            const raw = await chatCall(
-              { ...provider, model },
-              prompt.system,
-              prompt.user,
-              GENERATE_TIMEOUT_MS,
-            );
-            const stored = await request({ events: validateEvents(parseLooseJson(raw)) });
-            offer(stored);
-            return;
-          } catch {
-            notice = "Could not reach your LLM API — using a generated fallback";
-          }
-        } else {
-          notice = "Generated without an LLM — set your API in Settings for real sentences";
-        }
-      }
-      offer(info);
-    } catch (error) {
-      status = "error";
-      notice = error.message;
-    }
-  }
-
-  async function regenerate() {
-    status = "generating";
-    notice = "";
-    try {
-      offer(await request({ regenerate: true }));
-    } catch (error) {
-      status = "error";
-      notice = error.message;
-    }
-  }
-
-  function solveAgain() {
-    graded = null;
-    deal();
     status = "answering";
   }
 
@@ -128,10 +45,32 @@
     if (entry && !items.length) {
       deal();
     }
-    if (!data.entry && status === "generating" && !entry) {
-      ensure();
-    }
   });
+
+  async function regenerate() {
+    status = "generating";
+    notice = "";
+    try {
+      const res = await fetch("/api/test/events", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id: data.id, regenerate: true }),
+      });
+      const info = await res.json();
+      if (!res.ok) {
+        throw new Error(info.error || `HTTP ${res.status}`);
+      }
+      entry = info;
+      deal();
+    } catch (error) {
+      status = "error";
+      notice = error.message;
+    }
+  }
+
+  function solveAgain() {
+    deal();
+  }
 
   function submit() {
     let score = 0;
@@ -143,6 +82,7 @@
       return { ...item, picked: picked[index], correct };
     });
     graded = { score, total: items.length, results };
+    status = "summary";
   }
 </script>
 
@@ -161,14 +101,11 @@
       <p class="status">Making up the sentences…</p>
     {:else if status === "error"}
       <p class="status error" role="alert">{notice}</p>
-      <div class="actions"><button class="btn" type="button" onclick={ensure}>Retry</button></div>
+      <div class="actions"><button class="btn" type="button" onclick={solveAgain}>Retry</button></div>
     {:else if entry}
-      {#if notice}
-        <p class="status error" role="alert">{notice}</p>
-      {/if}
+      <p class="muted quiz-meta">True or false about the text? · {entry.created} · {entry.source}</p>
 
       {#if graded}
-        <p class="muted quiz-meta">{graded.score} / {graded.total} correct</p>
         {#each graded.results as result, i}
           <div class="quiz-q {result.correct ? 'correct' : 'incorrect'}">
             <strong>{result.correct ? "✓" : "✗"} Sentence {i + 1}</strong>
@@ -189,7 +126,6 @@
           <button class="btn" type="button" onclick={regenerate}>New test</button>
         </div>
       {:else}
-        <p class="muted quiz-meta">True or false about the text? · {entry.created} · {entry.source}</p>
         {#each items as item, i}
           <div class="quiz-q">
             <strong>Sentence {i + 1}</strong>
