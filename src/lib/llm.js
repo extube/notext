@@ -151,90 +151,178 @@ export async function chatLookup(provider, word, sentence, from, to, timeoutMs =
   return validateLLMJson(parseLooseJson(content));
 }
 
-/* ---- understanding quiz ---- */
+/* ---- test parts ---- */
 
-const QUIZ_SCHEMA =
-  '{"questions": [{"type": "mc", "question": string, "options": string[], "answer": number}, ' +
-  '{"type": "cloze", "template": string, "answer": string[]}, ' +
-  '{"type": "open", "question": string, "answer": string, "keywords": string[]}]}';
+const POINTS_SCHEMA = '{"points": string[]}';
+const EVENTS_SCHEMA = '{"true": string[], "false": string[]}';
 
-export function quizPrompt(text, to) {
+export function orderPrompt(text, to) {
   const TO = NAMES[to] || "the target language";
   const system =
-    `You create a comprehension test for a text and reply with STRICT JSON only — ` +
-    `no markdown, no prose. JSON schema: ${QUIZ_SCHEMA}. Create 8 questions about the text ` +
-    `below: 4 "mc" (multiple choice with 3-4 options, "answer" is the 0-based index of the ` +
-    `correct option), 2 "cloze" (take a sentence from the text and replace exactly one word ` +
-    `with [___], "answer" is the array of accepted words that fit the gap — keep the rest of ` +
-    `the sentence unchanged), 2 "open" ("question" needs a one-sentence answer, "answer" is ` +
-    `an exemplary full answer, "keywords" are 1-4 key words that must appear in a correct ` +
-    `answer). Questions, options, answers and keywords must be in ${TO}. The cloze ` +
-    `[___] replaces a word of the original text. Verify you output exactly one JSON object ` +
-    `with one "questions" array.`;
-  const user = `Text:
-
-${text}`;
+    `You read a text and reply with STRICT JSON only — no markdown, no prose. ` +
+    `JSON schema: ${POINTS_SCHEMA}. "points" lists the main points of the text below ` +
+    `in the exact order in which they appear in the text: at most 6 self-contained ` +
+    `sentences, one point per array element, written in ${TO}. Each point must state ` +
+    `one event or idea from the text. Preserve the text order — the reader will undo ` +
+    `your shuffling. Verify you output exactly one JSON object with one "points" array.`;
+  const user = `Text:\n\n${text}`;
   return { system, user };
 }
 
-export function validateQuiz(obj) {
-  if (!obj || typeof obj !== "object") {
-    throw new Error("Quiz JSON is not an object");
+export function validatePoints(obj) {
+  const raw = Array.isArray(obj) ? obj : obj?.points;
+  if (!Array.isArray(raw)) {
+    throw new Error("No points array");
   }
-  const raw = Array.isArray(obj) ? obj : obj.questions;
-  if (!Array.isArray(raw) || !raw.length) {
-    throw new Error("Quiz has no questions");
-  }
-  const quiz = [];
-  for (const q of raw) {
-    if (!q || typeof q !== "object" || typeof q.type !== "string") {
+  const seen = new Set();
+  const points = [];
+  for (const p of raw) {
+    if (typeof p !== "string" || !p.trim()) {
       continue;
     }
-    if (q.type === "mc") {
-      if (!Array.isArray(q.options) || q.options.length < 2 ||
-          !Number.isInteger(q.answer) || q.answer < 0 || q.answer >= q.options.length ||
-          !q.options.every((o) => typeof o === "string")) {
-        continue;
-      }
-      if (typeof q.question !== "string" || !q.question.trim()) {
-        continue;
-      }
-      quiz.push({
-        type: "mc",
-        question: q.question,
-        options: q.options,
-        answer: q.answer,
-      });
-    } else if (q.type === "cloze") {
-      if (typeof q.template !== "string" ||
-          !/\[?_{2,3}\]?/.test(q.template) ||
-          !Array.isArray(q.answer) || !q.answer.length ||
-          !q.answer.every((a) => typeof a === "string" && a.trim())) {
-        continue;
-      }
-      quiz.push({
-        type: "cloze",
-        template: q.template.replace(/\[?_{2,3}\]?/, "[___]"),
-        answer: q.answer.map((a) => a.trim()).filter(Boolean),
-      });
-    } else if (q.type === "open") {
-      if (typeof q.question !== "string" || !q.question.trim() ||
-          !Array.isArray(q.keywords) || !q.keywords.length ||
-          !q.keywords.every((k) => typeof k === "string")) {
-        continue;
-      }
-      quiz.push({
-        type: "open",
-        question: q.question,
-        answer: typeof q.answer === "string" ? q.answer : "",
-        keywords: q.keywords.map((k) => k.trim().toLowerCase()).filter(Boolean),
-      });
+    const key = p.trim().toLowerCase();
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    points.push(p.trim());
+  }
+  if (points.length < 2) {
+    throw new Error("Need at least 2 points");
+  }
+  return { points: points.slice(0, 6) };
+}
+
+export function eventsPrompt(text, to) {
+  const TO = NAMES[to] || "the target language";
+  const system =
+    `You build a true/false test for a text and reply with STRICT JSON only — ` +
+    `no markdown, no prose. JSON schema: ${EVENTS_SCHEMA}. Read the text below and ` +
+    `"true" lists 6 sentences that exactly state events or details that ARE in the ` +
+    `text (a few may use different wording than the original), while "false" lists ` +
+    `6 plausible sentences describing events or details that are NOT in the text — ` +
+    `same topic, but a changed detail, participant, cause or outcome. Every item is ` +
+    `one self-contained sentence in ${TO}; no sentence may appear in both arrays. ` +
+    `Verify you output exactly one JSON object with "true" and "false" arrays.`;
+  const user = `Text:\n\n${text}`;
+  return { system, user };
+}
+
+/* A sentence is duplicated when it differs only by punctuation/apostrophes
+   or shares ~80% of its words (Levenshtein on the folded keys). */
+export function foldKey(text) {
+  return (text || "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+}
+
+function levDistance(a, b) {
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) {
+      cur[j] = Math.min(
+        prev[j] + 1,
+        cur[j - 1] + 1,
+        prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
+      );
+    }
+    prev = cur;
+  }
+  return prev[b.length];
+}
+
+export function nearDuplicate(a, b) {
+  const ka = foldKey(a);
+  const kb = foldKey(b);
+  if (!ka || !kb) {
+    return false;
+  }
+  if (ka === kb) {
+    return true;
+  }
+  const ta = new Set(ka.split(" "));
+  const tb = new Set(kb.split(" "));
+  let inter = 0;
+  for (const t of ta) {
+    if (tb.has(t)) {
+      inter += 1;
     }
   }
-  if (!quiz.length) {
-    throw new Error("Quiz has no valid questions");
+  const union = ta.size + tb.size - inter;
+  if (union && inter / union >= 0.8) {
+    return true;
   }
-  return { questions: quiz };
+  const dist = levDistance(ka, kb);
+  return dist <= 0.15 * Math.max(ka.length, kb.length);
+}
+
+export function validateEvents(obj) {
+  const truthy = Array.isArray(obj) ? obj : obj?.true;
+  const falsy = obj?.false;
+  if (!Array.isArray(truthy) || !Array.isArray(falsy)) {
+    throw new Error("No true/false arrays");
+  }
+  const truth = [];
+  for (const s of truthy) {
+    if (typeof s === "string" && s.trim() &&
+        !truth.some((t) => nearDuplicate(t, s))) {
+      truth.push(s.trim());
+      if (truth.length >= 6) {
+        break;
+      }
+    }
+  }
+  // false sentences that repeat a true one (even with other wording or a
+  // swapped apostrophe) would give the same phrase two different answers
+  const falseItems = [];
+  for (const s of falsy) {
+    if (typeof s !== "string" || !s.trim()) {
+      continue;
+    }
+    if (truth.some((t) => nearDuplicate(t, s)) ||
+        falseItems.some((f) => nearDuplicate(f, s))) {
+      continue;
+    }
+    falseItems.push(s.trim());
+    if (falseItems.length >= 6) {
+      break;
+    }
+  }
+  if (truth.length < 2) {
+    throw new Error("Need at least 2 distinct true sentences");
+  }
+  if (falseItems.length < 2) {
+    throw new Error("Need at least 2 distinct false sentences");
+  }
+  return { true: truth, false: falseItems };
+}
+
+/* A stuttering or token-truncated model reply can still hold complete
+   array elements: close the reply at every boundary position until it
+   parses. */
+export function salvageJsonText(raw, closers = ["]}", "]", "}"]) {
+  if (!raw) {
+    return null;
+  }
+  const start = raw.indexOf("{");
+  if (start === -1) {
+    return null;
+  }
+  const base = raw.slice(start);
+  for (let cut = base.length; cut > 0; cut--) {
+    if (cut < base.length && !"\"],}".includes(base[cut - 1])) {
+      continue; // only close at element boundaries
+    }
+    for (const closer of closers) {
+      const candidate = base.slice(0, cut) + closer;
+      try {
+        JSON.parse(candidate);
+        return candidate;
+      } catch {
+        // next closer / next cut
+      }
+    }
+  }
+  return null;
 }
 
 /* Pick a model id from /v1/models (llama.cpp ignores it, OVMS/Local stacks
