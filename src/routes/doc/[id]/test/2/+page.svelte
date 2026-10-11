@@ -7,7 +7,6 @@
      a round takes 6 statements with a random mix of true/false items. */
   let entry = $state(data.entry);
   let status = $state("answering");
-  let notice = $state("");
   let items = $state([]);
   let picked = $state([]);
   let graded = $state(null);
@@ -47,27 +46,6 @@
     }
   });
 
-  async function regenerate() {
-    status = "generating";
-    notice = "";
-    try {
-      const res = await fetch("/api/test/events", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ id: data.id, regenerate: true }),
-      });
-      const info = await res.json();
-      if (!res.ok) {
-        throw new Error(info.error || `HTTP ${res.status}`);
-      }
-      entry = info;
-      deal();
-    } catch (error) {
-      status = "error";
-      notice = error.message;
-    }
-  }
-
   function solveAgain() {
     deal();
   }
@@ -97,12 +75,7 @@
   <div class="card">
     <h1>{data.title}</h1>
 
-    {#if status === "generating"}
-      <p class="status">Making up the sentences…</p>
-    {:else if status === "error"}
-      <p class="status error" role="alert">{notice}</p>
-      <div class="actions"><button class="btn" type="button" onclick={solveAgain}>Retry</button></div>
-    {:else if entry}
+    {#if entry}
       <p class="muted quiz-meta">True or false about the text? · {entry.created} · {entry.source}</p>
 
       {#if graded}
@@ -123,7 +96,7 @@
         {/each}
         <div class="actions">
           <button class="btn" type="button" onclick={solveAgain}>Solve again</button>
-          <button class="btn" type="button" onclick={regenerate}>New test</button>
+          <a class="btn primary" href="/doc/{data.id}/test/result">Results</a>
         </div>
       {:else}
         {#each items as item, i}
@@ -156,7 +129,6 @@
           <button class="btn primary" type="button" disabled={picked.includes(null)} onclick={submit}>
             Check answers
           </button>
-          <button class="btn" type="button" onclick={regenerate}>New test</button>
         </div>
       {/if}
     {/if}

@@ -5,7 +5,6 @@
      here the user only plays the round and may order a fresh draw. */
   let entry = $state(data.entry);
   let status = $state("answering");
-  let notice = $state("");
   let display = $state([]);
   let graded = $state(null);
 
@@ -36,27 +35,6 @@
       deal();
     }
   });
-
-  async function regenerate() {
-    status = "generating";
-    notice = "";
-    try {
-      const res = await fetch("/api/test/order", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ id: data.id, regenerate: true }),
-      });
-      const info = await res.json();
-      if (!res.ok) {
-        throw new Error(info.error || `HTTP ${res.status}`);
-      }
-      entry = info;
-      deal();
-    } catch (error) {
-      status = "error";
-      notice = error.message;
-    }
-  }
 
   function solveAgain() {
     deal();
@@ -106,12 +84,7 @@
   <div class="card">
     <h1>{data.title}</h1>
 
-    {#if status === "generating"}
-      <p class="status">Listing the main points…</p>
-    {:else if status === "error"}
-      <p class="status error" role="alert">{notice}</p>
-      <div class="actions"><button class="btn" type="button" onclick={solveAgain}>Retry</button></div>
-    {:else if entry}
+    {#if entry}
       <p class="muted quiz-meta">Put the points back into the text order · {entry.created} · {entry.source}</p>
 
       {#if graded}
@@ -126,7 +99,7 @@
         {/each}
         <div class="actions">
           <button class="btn" type="button" onclick={solveAgain}>Solve again</button>
-          <button class="btn" type="button" onclick={regenerate}>New test</button>
+          <a class="btn primary" href="/doc/{data.id}/test/2">Next part</a>
         </div>
       {:else}
         {#each display as point, i}
@@ -141,7 +114,6 @@
         {/each}
         <div class="actions">
           <button class="btn primary" type="button" onclick={submit}>Check order</button>
-          <button class="btn" type="button" onclick={regenerate}>New test</button>
         </div>
       {/if}
     {/if}

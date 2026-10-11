@@ -8,6 +8,7 @@
     <p class="muted">{data.doc.title || "Untitled"}</p>
     <div class="actions">
       <a class="btn primary" href="/">To main page</a>
+      <a class="btn" href="/doc/{data.id}/test">Back to test</a>
     </div>
   </div>
 </main>
