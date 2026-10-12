@@ -1,18 +1,20 @@
 import { json } from "@sveltejs/kit";
 import {
-  docSentences,
+  GENERATE_TIMEOUT_MS,
   docText,
-  generateWithSite,
   loadParsedDoc,
   nowCreated,
   readRequest,
   readScore,
+  siteModelProvider,
+  spreadSentences,
   storeEntry,
 } from "$lib/server/testpart.js";
 import {
-  parseLooseJson,
-  orderPrompt,
-  salvageJsonText,
+  chatCall,
+  cleanReformulation,
+  reformulatePrompt,
+  usableReformulation,
   validatePoints,
 } from "$lib/llm.js";
 
@@ -39,7 +41,7 @@ export async function POST({ request, url }) {
     return json({ error: error.message }, { status: 400 });
   }
 
-  // points generated in this browser through the user's own LLM
+  // reformulated points generated in this browser through the user's LLM
   if (body?.order?.points) {
     try {
       const points = validatePoints(body.order).points;
@@ -62,33 +64,49 @@ export async function POST({ request, url }) {
     return json(existing);
   }
 
-  const text = docText(doc);
   let entry;
+  // 6 sentences picked programmatically across the text, in text order;
+  // each one goes through its own "rephrase it" request
+  const sources = spreadSentences(doc);
+  if (sources.length < 2) {
+    return json({ error: "Text is too short for the order part" }, { status: 500 });
+  }
+  let points = sources;
   try {
-    const { raw, model } = await generateWithSite(text, orderPrompt(text, doc.translate_to || doc.language));
-    let parsed;
-    try {
-      parsed = validatePoints(parseLooseJson(raw));
-    } catch {
-      const salvaged = salvageJsonText(raw);
-      if (!salvaged) {
-        throw new Error("Unparseable points reply");
-      }
-      parsed = validatePoints(parseLooseJson(salvaged));
+    const provider = await siteModelProvider();
+    const reformulated = await Promise.all(
+      sources.map(async (sentence) => {
+        const prompt = reformulatePrompt(sentence, doc.language);
+        const raw = await chatCall(
+          provider,
+          prompt.system,
+          prompt.user,
+          GENERATE_TIMEOUT_MS,
+          300,
+        ).catch(() => null);
+        const cleaned = raw === null ? null : cleanReformulation(raw);
+        return cleaned && usableReformulation(sentence, cleaned) ? cleaned : null;
+      }),
+    );
+    if (reformulated.some(Boolean)) {
+      points = reformulated.map((point, index) => point ?? sources[index]);
+      entry = {
+        part: "order",
+        source: provider.model,
+        created: nowCreated(),
+        points,
+      };
+    } else {
+      // no usable reformulation: original sentences, still in true order
+      entry = {
+        part: "order",
+        source: "deterministic",
+        created: nowCreated(),
+        points,
+      };
     }
-    entry = {
-      part: "order",
-      source: model,
-      created: nowCreated(),
-      points: parsed.points,
-    };
   } catch (error) {
     console.error(`order generation failed: ${error.message}`);
-    // offline fallback: the first sentences in text order are the points
-    let points = docSentences(doc).slice(0, 6);
-    if (points.length < 2) {
-      return json({ error: `Order generation failed: ${error.message}` }, { status: 500 });
-    }
     entry = {
       part: "order",
       source: "deterministic",
@@ -97,5 +115,10 @@ export async function POST({ request, url }) {
     };
   }
   storeEntry(id, doc, "order", entry);
-  return json({ ...entry, fallback: entry.source === "deterministic", text });
+  return json({
+    ...entry,
+    fallback: entry.source === "deterministic",
+    text: docText(doc),
+    sentences: sources,
+  });
 }

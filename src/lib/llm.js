@@ -101,7 +101,7 @@ export function validateLLMJson(obj) {
    model id is auto-detected from /v1/models (llama.cpp ignores the id,
    OVMS-like servers require a match). */
 /* Generic OpenAI-compatible chat call: returns the message content. */
-export async function chatCall(provider, system, user, timeoutMs = 15000, maxTokens = 2000) {
+export async function chatCall(provider, system, user, timeoutMs = 15000, maxTokens = 2000, temperature = 0) {
   const headers = { "content-type": "application/json" };
   if (provider.key) {
     headers.authorization = `Bearer ${provider.key}`;
@@ -112,7 +112,7 @@ export async function chatCall(provider, system, user, timeoutMs = 15000, maxTok
     body: JSON.stringify({
       model: provider.model,
       stream: false,
-      temperature: 0,
+      temperature,
       max_tokens: maxTokens,
       messages: [
         { role: "system", content: system },
@@ -154,19 +154,143 @@ export async function chatLookup(provider, word, sentence, from, to, timeoutMs =
 /* ---- test parts ---- */
 
 const POINTS_SCHEMA = '{"points": string[]}';
-const EVENTS_SCHEMA = '{"true": string[], "false": string[]}';
 
-export function orderPrompt(text, to) {
-  const TO = NAMES[to] || "the target language";
+export function eventsTruePrompt(text, language) {
+  const LANGUAGE = NAMES[language] || "the text language";
   const system =
-    `You read a text and reply with STRICT JSON only — no markdown, no prose. ` +
-    `JSON schema: ${POINTS_SCHEMA}. "points" lists the main points of the text below ` +
-    `in the exact order in which they appear in the text: at most 6 self-contained ` +
-    `sentences, one point per array element, written in ${TO}. Each point must state ` +
-    `one event or idea from the text. Preserve the text order — the reader will undo ` +
-    `your shuffling. Verify you output exactly one JSON object with one "points" array.`;
+    `You read a text and answer in PLAIN TEXT only — no JSON, no markdown, ` +
+    `no numbering, no bullet points, no comments about the task. Write 8 ` +
+    `self-contained sentences, each stating an event or detail that IS in the ` +
+    `text below, keeping the order of the text. Each sentence ends with a ` +
+    `period and stands on its own. Write everything in ${LANGUAGE} — the ` +
+    `language of the text itself, never translate it.`;
   const user = `Text:\n\n${text}`;
   return { system, user };
+}
+
+export function eventsFalsePrompt(text, language) {
+  const LANGUAGE = NAMES[language] || "the text language";
+  const system =
+    `You read a text and answer in PLAIN TEXT only — no JSON, no markdown, ` +
+    `no numbering, no bullet points, no comments about the task. Write 8 ` +
+    `self-contained sentences in ${LANGUAGE}, each describing an event that the ` +
+    `characters could have lived but that the text NEVER mentions: a different ` +
+    `place they visit, a meeting with somebody absent from the text, an action ` +
+    `with an object that never appears there. Take care that every event is ` +
+    `new: do not restate, reword or negate anything the text says, and never ` +
+    `mention the task itself. Each sentence ends with a period.`;
+  const user = `Text:\n\n${text}`;
+  return { system, user };
+}
+
+/* Plain replies are split into sentences (the model was asked for exactly
+   six, one after another); numbered lists and near-repeats are dropped. */
+export function splitFacts(raw, limit = 8) {
+  const cleaned = String(raw).replace(/```[a-z]*|```/gi, "").trim();
+  const parts = cleaned.split(/(?<=[.!?…])\s+/);
+  const out = [];
+  for (const part of parts) {
+    const sentence = part.trim().replace(/^\d+[).:\-\s]+/, "").trim();
+    if (foldKey(sentence).length < 12 || /[":]$/.test(sentence)) {
+      continue;
+    }
+    if (out.some((s) => nearDuplicate(s, sentence))) {
+      continue;
+    }
+    out.push(sentence);
+    if (out.length >= limit) {
+      break;
+    }
+  }
+  return out;
+}
+
+/* One round of fact generation: the true and the false lists come from
+   two independent plain-text requests, each retried once if unusable. */
+export async function fetchFacts(provider, text, language, timeoutMs, maxTokens = 500) {
+  const run = async (promptFn, retryNote, temperature, retryTemp) => {
+    const prompt = promptFn(text, language);
+    let list = [];
+    try {
+      list = splitFacts(
+        await chatCall(provider, prompt.system, prompt.user, timeoutMs, maxTokens, temperature),
+      );
+    } catch {
+      // retry below
+    }
+    if (list.length < 2) {
+      try {
+        list = splitFacts(
+          await chatCall(
+            provider,
+            `${prompt.system} ${retryNote}`,
+            prompt.user,
+            timeoutMs,
+            maxTokens,
+            retryTemp,
+          ),
+        );
+      } catch {
+        // both attempts failed
+      }
+    }
+    return list;
+  };
+  const truth = await run(
+    eventsTruePrompt,
+    "Reply with exactly 8 plain sentences that are in the text, written in the text language.",
+    0.2,
+    0.6,
+  );
+  const falsy = await run(
+    eventsFalsePrompt,
+    "Reply with exactly 8 plain sentences about events that are NOT in the text: new places, new meetings, new actions for these characters. Nothing from the text itself.",
+    0.9,
+    1.0,
+  );
+  return { true: truth, false: falsy };
+};
+
+export function reformulatePrompt(sentence, language) {
+  const LANGUAGE = NAMES[language] || "the text language";
+  const system =
+    `You rephrase one sentence in ${LANGUAGE}, keeping the exact meaning — ` +
+    `same event, same details, other words and order. Reply in PLAIN TEXT ` +
+    `only: just the rewritten sentence, no quotes, no markdown, no numbering, ` +
+    `no comments, nothing else.`;
+  const user = `Language: ${LANGUAGE}\nSentence: ${sentence}`;
+  return { system, user };
+}
+
+/* A reformulation answer is one standalone sentence; quotes, list markers
+   and meta lines are peeled off, unusable answers return null. */
+export function cleanReformulation(raw) {
+  let text = String(raw ?? "").replace(/```[a-z]*|```/gi, "").trim();
+  const line = text.split(/\n+/).map((part) => part.trim()).find(Boolean) || "";
+  const stripped = line
+    .replace(/^["“”»«'—–*_\d{}.]+\s*/u, "")
+    .replace(/["“”»«']$/u, "")
+    .trim();
+  return foldKey(stripped).length < 10 ? null : stripped;
+}
+
+/* A paraphrase keeps the meaning, so it should keep at least two content
+   lexemes of the source; zero shared words means the model derailed. */
+export function contentOverlap(a, b) {
+  const words = (text) =>
+    foldKey(text).split(/\s+/).filter((word) => word.length >= 4);
+  const seen = new Set(words(a));
+  let shared = 0;
+  for (const word of new Set(words(b))) {
+    if (seen.has(word)) {
+      shared += 1;
+    }
+  }
+  return shared;
+}
+
+export function usableReformulation(source, cleaned) {
+  return Boolean(cleaned) && contentOverlap(source, cleaned) >= 2;
 }
 
 export function validatePoints(obj) {
@@ -191,21 +315,6 @@ export function validatePoints(obj) {
     throw new Error("Need at least 2 points");
   }
   return { points: points.slice(0, 6) };
-}
-
-export function eventsPrompt(text, to) {
-  const TO = NAMES[to] || "the target language";
-  const system =
-    `You build a true/false test for a text and reply with STRICT JSON only — ` +
-    `no markdown, no prose. JSON schema: ${EVENTS_SCHEMA}. Read the text below and ` +
-    `"true" lists 6 sentences that exactly state events or details that ARE in the ` +
-    `text (a few may use different wording than the original), while "false" lists ` +
-    `6 plausible sentences describing events or details that are NOT in the text — ` +
-    `same topic, but a changed detail, participant, cause or outcome. Every item is ` +
-    `one self-contained sentence in ${TO}; no sentence may appear in both arrays. ` +
-    `Verify you output exactly one JSON object with "true" and "false" arrays.`;
-  const user = `Text:\n\n${text}`;
-  return { system, user };
 }
 
 /* A sentence is duplicated when it differs only by punctuation/apostrophes
@@ -261,9 +370,10 @@ export function validateEvents(obj) {
   if (!Array.isArray(truthy) || !Array.isArray(falsy)) {
     throw new Error("No true/false arrays");
   }
+  const statement = (s) => !/[?!]/u.test(s.trim().slice(-1));
   const truth = [];
   for (const s of truthy) {
-    if (typeof s === "string" && s.trim() &&
+    if (typeof s === "string" && s.trim() && statement(s) &&
         !truth.some((t) => nearDuplicate(t, s))) {
       truth.push(s.trim());
       if (truth.length >= 6) {
@@ -275,7 +385,7 @@ export function validateEvents(obj) {
   // swapped apostrophe) would give the same phrase two different answers
   const falseItems = [];
   for (const s of falsy) {
-    if (typeof s !== "string" || !s.trim()) {
+    if (typeof s !== "string" || !s.trim() || !statement(s)) {
       continue;
     }
     if (truth.some((t) => nearDuplicate(t, s)) ||

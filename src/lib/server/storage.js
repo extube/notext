@@ -48,6 +48,40 @@ export function findOrCreateLink(docId) {
   return linkId;
 }
 
+export function deleteDoc(id) {
+  if (!ID_RE.test(id)) return false;
+  try {
+    fs.unlinkSync(path.join(DATA_DIR, `${id}.json`));
+  } catch {
+    return false;
+  }
+  // a deleted doc takes its share links with it
+  for (const linkId of linkedIds(id)) {
+    try {
+      fs.unlinkSync(path.join(LINKS_DIR, linkId));
+    } catch {
+      // already gone
+    }
+  }
+  return true;
+}
+
+function linkedIds(docId) {
+  try {
+    return fs
+      .readdirSync(LINKS_DIR)
+      .filter((entry) => {
+        try {
+          return fs.readFileSync(path.join(LINKS_DIR, entry), "utf8") === docId;
+        } catch {
+          return false;
+        }
+      });
+  } catch {
+    return [];
+  }
+}
+
 export function loadLink(linkId) {
   if (!ID_RE.test(linkId)) return null;
   try {

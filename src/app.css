@@ -493,8 +493,14 @@ textarea {
   color: var(--accent);
 }
 
-/* result page: per-part percent statistics */
-.score-row {
+/* process page: ready options row */
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+/* result page: per-part percent statistics */.score-row {
   border: 1px solid var(--border);
   border-radius: 8px;
   margin-bottom: 0.9rem;

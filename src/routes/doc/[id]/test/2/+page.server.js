@@ -11,7 +11,7 @@ export async function load({ params }) {
   const doc = JSON.parse(raw);
   const entry = doc.test?.events;
   if (!entry?.true?.length || !entry?.false?.length) {
-    redirect(302, `/doc/${params.id}/test`);
+    redirect(302, `/process/${params.id}`);
   }
   return {
     id: params.id,

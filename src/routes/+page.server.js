@@ -39,6 +39,6 @@ export const actions = {
     });
 
     const id = saveDoc(doc);
-    redirect(303, `/doc/${id}/view`);
+    redirect(303, `/process/${id}`);
   },
 };
