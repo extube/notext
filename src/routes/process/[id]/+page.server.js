@@ -12,6 +12,6 @@ export async function load({ params }) {
   return {
     id: params.id,
     title: doc.title || "Untitled",
-    to: doc.translate_to || doc.language,
+    language: doc.language,
   };
 }

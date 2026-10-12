@@ -10,7 +10,22 @@ import {
   siteModelProvider,
   storeEntry,
 } from "$lib/server/testpart.js";
-import { fetchFacts, validateEvents } from "$lib/llm.js";
+import { fetchFacts, foldKey, validateEvents } from "$lib/llm.js";
+
+/* Events must be invented: a "false" item that quotes 6 consecutive words
+   of the text is text material, not imagination (shorter overlapping
+   fragments are common openings, not evidence of copying). */
+function notFromText(sentences, corpus) {
+  return sentences.filter((sentence) => {
+    const words = foldKey(sentence).split(/\s+/).filter(Boolean);
+    for (let i = 0; i + 6 <= words.length; i++) {
+      if (corpus.includes(words.slice(i, i + 6).join(" "))) {
+        return false;
+      }
+    }
+    return true;
+  });
+}
 
 /* Deterministic false sentences: recombine comma-separated clauses from
    two different sentences — a plausible claim that is not in the text,
@@ -62,6 +77,7 @@ export async function POST({ request, url }) {
   if (body?.events) {
     try {
       const events = validateEvents(body.events);
+      events.false = notFromText(events.false, foldKey(docText(doc)));
       const entry = {
         part: "events",
         source: "user-llm",
@@ -89,13 +105,23 @@ export async function POST({ request, url }) {
     const facts = await fetchFacts(
       provider,
       text,
-      doc.translate_to || doc.language,
+      doc.language,
       GENERATE_TIMEOUT_MS,
     );
     if (!facts.true.length || !facts.false.length) {
       throw new Error("Model did not provide usable facts");
     }
     const parsed = validateEvents(facts);
+    const corpus = foldKey(docText(doc));
+    if (parsed.false.length >= 2) {
+      parsed.false = notFromText(parsed.false, corpus);
+    }
+    console.log(`events debug: before=${facts.false.length} after-validate=${parsed.false.length} after-corpus=${parsed.false.length}`);
+    console.log(`events falses: ${JSON.stringify(facts.false)}`);
+    console.log(`events trues: ${JSON.stringify(facts.true.slice(0, 3))}`);
+    if (parsed.false.length < 2) {
+      throw new Error("Every invented fact was taken from the text itself");
+    }
     entry = {
       part: "events",
       source: provider.model,

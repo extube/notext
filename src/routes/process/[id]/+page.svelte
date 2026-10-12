@@ -2,12 +2,12 @@
   import { goto } from "$app/navigation";
   import {
     chatCall,
+    cleanReformulation,
     detectModel,
     fetchFacts,
-    orderPrompt,
-    parseLooseJson,
+    reformulatePrompt,
+    usableReformulation,
     validateEvents,
-    validatePoints,
   } from "$lib/llm.js";
 
   let { data } = $props();
@@ -34,7 +34,7 @@
             ...provider,
             model: provider.model || (await detectModel(provider)),
           };
-          const payload = await step.upgradeFrom(info, withModel, data.to);
+          const payload = await step.upgradeFrom(info, withModel, data.language);
           const res2 = await fetch(step.path, {
             method: "POST",
             headers: { "content-type": "application/json" },
@@ -51,14 +51,28 @@
   }
 
   /* fallback generated without an LLM — try the user's own api */
-  async function upgradePoints(info, provider, to) {
-    const prompt = orderPrompt(info.text, to);
-    const raw = await chatCall(provider, prompt.system, prompt.user, 120000);
-    return { order: validatePoints(parseLooseJson(raw)) };
+  async function upgradePoints(info, provider, language) {
+    const sources = info.sentences || [];
+    const reformulated = await Promise.all(
+      sources.map(async (sentence) => {
+        const prompt = reformulatePrompt(sentence, language);
+        const raw = await chatCall(
+          provider,
+          prompt.system,
+          prompt.user,
+          240000,
+          300,
+        ).catch(() => null);
+        const cleaned = raw === null ? null : cleanReformulation(raw);
+        return cleaned && usableReformulation(sentence, cleaned) ? cleaned : null;
+      }),
+    );
+    const points = reformulated.map((point, index) => point ?? sources[index]);
+    return { order: { points } };
   }
 
-  async function upgradeEvents(info, provider, to) {
-    const facts = await fetchFacts(provider, info.text, to, 120000);
+  async function upgradeEvents(info, provider, language) {
+    const facts = await fetchFacts(provider, info.text, language, 120000);
     return { events: validateEvents(facts) };
   }
 

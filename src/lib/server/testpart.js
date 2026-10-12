@@ -3,7 +3,7 @@ import { siteProvider } from "$lib/server/llm-site.js";
 import { chatCall, detectModel } from "$lib/llm.js";
 import { joinWords } from "$lib/text.js";
 
-export const GENERATE_TIMEOUT_MS = 120000;
+export const GENERATE_TIMEOUT_MS = 240000;
 
 /* Flatten the stored doc into plain text: sentences joined with spaces
    (matches what the reader shows), blank lines between parts. */
@@ -115,4 +115,21 @@ export function docSentences(doc) {
     }
   }
   return out;
+}
+
+/* Order part: up to 6 sentences picked evenly across the whole text, in
+   text order — the reformulations keep that order as the true answer. */
+export function spreadSentences(doc, limit = 6) {
+  const all = docSentences(doc);
+  const picked = [];
+  for (let i = 0; i < limit && all.length; i++) {
+    const index = all.length <= limit
+      ? i
+      : Math.floor((i * (all.length - 1)) / (limit - 1));
+    const sentence = all[index];
+    if (sentence && !picked.includes(sentence)) {
+      picked.push(sentence);
+    }
+  }
+  return picked;
 }
