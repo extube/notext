@@ -9,13 +9,15 @@ storage scheme — all unchanged from the vanilla-stack phase.
 | # | Route | Purpose |
 | --- | --- | --- |
 | 1 | `GET /` | Main page: input form (text area or file upload `.txt`/`.md`), text language and translation language selects. Two buttons: **Create** (submit) and **Upload** (file dialog) |
-| 2 | `POST /read` | Backend parses + stores the document → `303` redirect to `/doc/<id>/view` |
+| 2 | `POST /` (submit) | Backend parses + stores the document and hands the id to the browser → the redirect envelope points to `/process/<id>` |
+| 3 | `GET /process/<id>` | Processing checklist: **preparing text → test part 1 → test part 2 → saving** (the test json is built once while processing the doc); ready state shows four options: **Review**, **Share**, **Read**, **Delete** |
+| 4 | `GET /doc/<id>/test/review` | Review of the generated test: every part with its answers; per-part **Regenerate** buttons (the browser upgrades `deterministic` fallbacks through the user's own LLM) |
 | 3 | `GET /doc/<id>/view` | Preview of the processed document: **title**, **languages**, **first 100 words**, and two buttons — **Share** and **Read** |
 | 4 | `GET /doc/<id>/read` | Reading mode: part titles and sentences in **separate blocks**; every block has a half-opacity **Copy** button (revealed on hover) |
 | 5 | `GET /doc/<id>/json` | JSON version of the text (`<pre>` view + raw link) |
 | 6 | `GET /doc/<id>/share` | Share page: shows the public link and a **Copy link** button |
 | 7 | `GET /link/<link_id>` | Shared-link entry: redirects (302) to `/doc/<id>/view` |
-| 8 | `GET /doc/<id>/test` | Testing page (placeholder yet): **Back** and **Finish** buttons; opened via **Begin testing** on the read page |
+| 9 | `GET /doc/<id>/test` |  Testing menu: **Back** + **Start solving** → part 1; part loaders redirect to `/process` when a part is missing | Testing page (placeholder yet): **Back** and **Finish** buttons; opened via **Begin testing** on the read page |
 | 9 | `GET /doc/<id>/test/result` | Test results (placeholder yet) with a **To main page** button |
 
 Rules unchanged from v0.2: **all JavaScript logic runs on the backend** —
