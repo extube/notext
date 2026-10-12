@@ -46,7 +46,7 @@ export function loadParsedDoc(id) {
 }
 
 /* Site LLM only (data/settings.json): users' own APIs live client-side. */
-export async function generateWithSite(text, prompt, maxTokens = 8000) {
+export async function siteModelProvider() {
   const provider = await siteProvider();
   if (!provider) {
     throw new Error("No site LLM configured");
@@ -55,14 +55,19 @@ export async function generateWithSite(text, prompt, maxTokens = 8000) {
   if (!model) {
     model = await detectModel({ base: provider.base, key: provider.key });
   }
+  return { ...provider, model };
+}
+
+export async function generateWithSite(text, prompt, maxTokens = 8000) {
+  const provider = await siteModelProvider();
   const raw = await chatCall(
-    { ...provider, model },
+    provider,
     prompt.system,
     prompt.user,
     GENERATE_TIMEOUT_MS,
     maxTokens,
   );
-  return { raw, model };
+  return { raw, model: provider.model };
 }
 
 /* Store the part entry, quietly dropping any legacy quiz entry. */

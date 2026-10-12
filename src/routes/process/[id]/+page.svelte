@@ -3,7 +3,7 @@
   import {
     chatCall,
     detectModel,
-    eventsPrompt,
+    fetchFacts,
     orderPrompt,
     parseLooseJson,
     validateEvents,
@@ -15,7 +15,7 @@
   /* Checklist: the text arrives parsed from the create form, then the
      test parts are generated and saved; each request already stores its
      json with the document. */
-  async function buildPart(step, promptFn, validateFn, pick) {
+  async function buildPart(step) {
     const res = await fetch(step.path, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -30,15 +30,11 @@
       const provider = userProvider();
       if (provider) {
         try {
-          const prompt = promptFn(info.text, data.to);
-          const model = provider.model || (await detectModel(provider));
-          const raw = await chatCall(
-            { ...provider, model },
-            prompt.system,
-            prompt.user,
-            120000,
-          );
-          const payload = pick(validateFn(parseLooseJson(raw)));
+          const withModel = {
+            ...provider,
+            model: provider.model || (await detectModel(provider)),
+          };
+          const payload = await step.upgradeFrom(info, withModel, data.to);
           const res2 = await fetch(step.path, {
             method: "POST",
             headers: { "content-type": "application/json" },
@@ -52,6 +48,18 @@
         }
       }
     }
+  }
+
+  /* fallback generated without an LLM — try the user's own api */
+  async function upgradePoints(info, provider, to) {
+    const prompt = orderPrompt(info.text, to);
+    const raw = await chatCall(provider, prompt.system, prompt.user, 120000);
+    return { order: validatePoints(parseLooseJson(raw)) };
+  }
+
+  async function upgradeEvents(info, provider, to) {
+    const facts = await fetchFacts(provider, info.text, to, 120000);
+    return { events: validateEvents(facts) };
   }
 
   /* A user's own LLM API lives in this browser — generation through it
@@ -70,16 +78,12 @@
     {
       label: "preparing test part 1",
       path: "/api/test/order",
-      prompt: orderPrompt,
-      validate: validatePoints,
-      pick: (result) => ({ order: result }),
+      upgradeFrom: upgradePoints,
     },
     {
       label: "preparing test part 2",
       path: "/api/test/events",
-      prompt: eventsPrompt,
-      validate: validateEvents,
-      pick: (result) => ({ events: result }),
+      upgradeFrom: upgradeEvents,
     },
     { label: "saving", builtIn: true },
   ];
@@ -100,7 +104,7 @@
           done = { ...done, [step.label]: true };
           continue;
         }
-        await buildPart(step, step.prompt, step.validate, step.pick);
+        await buildPart(step);
         done = { ...done, [step.label]: true };
       } catch (error) {
         notice = error.message;

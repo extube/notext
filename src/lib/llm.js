@@ -154,7 +154,94 @@ export async function chatLookup(provider, word, sentence, from, to, timeoutMs =
 /* ---- test parts ---- */
 
 const POINTS_SCHEMA = '{"points": string[]}';
-const EVENTS_SCHEMA = '{"true": string[], "false": string[]}';
+
+export function eventsTruePrompt(text, to) {
+  const TO = NAMES[to] || "the target language";
+  const system =
+    `You read a text and answer in PLAIN TEXT only — no JSON, no markdown, ` +
+    `no numbering, no bullet points, no comments about the task. Write 6 ` +
+    `self-contained sentences, each stating an event or detail that IS in the ` +
+    `text below, keeping the order of the text. Each sentence ends with a ` +
+    `period and stands on its own, in ${TO}.`;
+  const user = `Text:\n\n${text}`;
+  return { system, user };
+}
+
+export function eventsFalsePrompt(text, to) {
+  const TO = NAMES[to] || "the target language";
+  const system =
+    `You read a text and answer in PLAIN TEXT only — no JSON, no markdown, ` +
+    `no numbering, no bullet points, no comments about the task. Write 6 ` +
+    `self-contained sentences describing events that have NOT occurred in the ` +
+    `text below: imagine new plausible events for the same characters or world, ` +
+    `never rearrange text sentences or reuse their wording, and never mention ` +
+    `the task. Each sentence ends with a period, in ${TO}.`;
+  const user = `Text:\n\n${text}`;
+  return { system, user };
+}
+
+/* Plain replies are split into sentences (the model was asked for exactly
+   six, one after another); numbered lists and near-repeats are dropped. */
+export function splitFacts(raw, limit = 8) {
+  const cleaned = String(raw).replace(/```[a-z]*|```/gi, "").trim();
+  const parts = cleaned.split(/(?<=[.!?…])\s+/);
+  const out = [];
+  for (const part of parts) {
+    const sentence = part.trim().replace(/^\d+[).:\-\s]+/, "").trim();
+    if (foldKey(sentence).length < 12 || /[":]$/.test(sentence)) {
+      continue;
+    }
+    if (out.some((s) => nearDuplicate(s, sentence))) {
+      continue;
+    }
+    out.push(sentence);
+    if (out.length >= limit) {
+      break;
+    }
+  }
+  return out;
+}
+
+/* One round of fact generation: the true and the false lists come from
+   two independent plain-text requests, each retried once if unusable. */
+export async function fetchFacts(provider, text, to, timeoutMs, maxTokens = 500) {
+  const run = async (promptFn, retryNote) => {
+    const prompt = promptFn(text, to);
+    let list = [];
+    try {
+      list = splitFacts(
+        await chatCall(provider, prompt.system, prompt.user, timeoutMs, maxTokens),
+      );
+    } catch {
+      // retry below
+    }
+    if (list.length < 2) {
+      try {
+        list = splitFacts(
+          await chatCall(
+            provider,
+            `${prompt.system} ${retryNote}`,
+            prompt.user,
+            timeoutMs,
+            maxTokens,
+          ),
+        );
+      } catch {
+        // both attempts failed
+      }
+    }
+    return list;
+  };
+  const truth = await run(
+    eventsTruePrompt,
+    "Reply with exactly 6 plain sentences that are in the text.",
+  );
+  const falsy = await run(
+    eventsFalsePrompt,
+    "Reply with exactly 6 plain sentences about events that are NOT in the text.",
+  );
+  return { true: truth, false: falsy };
+};
 
 export function orderPrompt(text, to) {
   const TO = NAMES[to] || "the target language";
@@ -191,21 +278,6 @@ export function validatePoints(obj) {
     throw new Error("Need at least 2 points");
   }
   return { points: points.slice(0, 6) };
-}
-
-export function eventsPrompt(text, to) {
-  const TO = NAMES[to] || "the target language";
-  const system =
-    `You build a true/false test for a text and reply with STRICT JSON only — ` +
-    `no markdown, no prose. JSON schema: ${EVENTS_SCHEMA}. Read the text below and ` +
-    `"true" lists 6 sentences that exactly state events or details that ARE in the ` +
-    `text (a few may use different wording than the original), while "false" lists ` +
-    `6 plausible sentences describing events or details that are NOT in the text — ` +
-    `same topic, but a changed detail, participant, cause or outcome. Every item is ` +
-    `one self-contained sentence in ${TO}; no sentence may appear in both arrays. ` +
-    `Verify you output exactly one JSON object with "true" and "false" arrays.`;
-  const user = `Text:\n\n${text}`;
-  return { system, user };
 }
 
 /* A sentence is duplicated when it differs only by punctuation/apostrophes
