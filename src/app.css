@@ -707,16 +707,10 @@ textarea {
 }
 
 .doc-tile {
-  background: hsl(var(--hue) 32% 13%);
-  border: 1px solid hsl(var(--hue) 40% 24%);
-  border-radius: 8px;
   color: hsl(var(--hue) 55% 76%);
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  min-height: 5.4rem;
-  padding: 0.7rem 0.85rem;
-  padding-right: 1.9rem;
   position: relative;
   text-decoration: none;
 }
@@ -769,4 +763,56 @@ textarea {
 
 .tile-pct.pct-low {
   color: rgb(197 74 74);
+}
+
+
+/* main menu: all texts entry, full width below the tiles */
+.docs-all {
+  display: block;
+  margin-top: 1rem;
+  text-align: center;
+  width: 100%;
+}
+
+/* list page: prev / next */
+.pager {
+  align-items: center;
+  display: flex;
+  gap: 0.8rem;
+  justify-content: center;
+  margin-top: 1.4rem;
+}
+
+.pager-info {
+  font-size: 0.9rem;
+}
+
+/* stored texts look like little books: dark spine on the left, serif title */
+.doc-tile {
+  background: linear-gradient(160deg, hsl(var(--hue) 30% 16%), hsl(var(--hue) 36% 9%));
+  border: 1px solid hsl(var(--hue) 38% 24%);
+  border-radius: 3px 9px 9px 3px;
+  color: hsl(var(--hue) 55% 76%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-height: 7.2rem;
+  padding: 0.85rem 0.85rem 0.85rem 1.5rem;
+  position: relative;
+  text-decoration: none;
+}
+
+.doc-tile::before {
+  background: hsl(var(--hue) 36% 8%);
+  border-right: 1px solid hsl(var(--hue) 40% 26%);
+  content: "";
+  height: 100%;
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 0.7rem;
+}
+
+.tile-title {
+  font-family: Georgia, "Times New Roman", serif;
 }

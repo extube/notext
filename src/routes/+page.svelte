@@ -118,6 +118,9 @@
         {/each}
       </div>
     </section>
+    {#if data.total > data.docs.length}
+      <a class="btn docs-all" href="/list">All texts ({data.total})</a>
+    {/if}
   {/if}
 </main>
 
