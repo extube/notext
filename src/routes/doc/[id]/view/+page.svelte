@@ -1,7 +1,18 @@
 <script>
+  import { onMount } from "svelte";
   import { joinWords } from "$lib/text.js";
+  import { myDocs, myResults } from "$lib/browser.js";
 
   let { data } = $props();
+
+  /* Browser-only buttons: a user sees Test results on their own solved
+     texts and Share on texts created in this browser. */
+  let showResults = $state(false);
+  let showShare = $state(false);
+  onMount(() => {
+    showResults = typeof myResults()[data.id] === "number";
+    showShare = myDocs().includes(data.id);
+  });
 
   const doc = $derived(data.doc);
   const words = $derived(
@@ -28,7 +39,12 @@
     <p class="preview">{preview}{#if words.length > 100}<span class="muted"> …</span>{/if}</p>
     <div class="actions">
       <a class="btn primary" href="/doc/{data.id}/read">Read</a>
-      <a class="btn" href="/doc/{data.id}/share">Share</a>
+      {#if showResults}
+        <a class="btn" href="/doc/{data.id}/test/result">Results</a>
+      {/if}
+      {#if showShare}
+        <a class="btn" href="/doc/{data.id}/share">Share</a>
+      {/if}
     </div>
   </article>
 </main>
