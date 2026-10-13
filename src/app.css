@@ -706,6 +706,19 @@ textarea {
   margin-top: 0.75rem;
 }
 
+/* the grid never shows more than 4 tiles per line */
+@media (min-width: 480px) {
+  .docs-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 640px) {
+  .docs-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
 .doc-tile {
   color: hsl(var(--hue) 55% 76%);
   display: flex;
