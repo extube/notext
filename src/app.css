@@ -720,7 +720,7 @@ textarea {
 }
 
 .doc-tile {
-  color: hsl(var(--hue) 55% 76%);
+  color: hsl(var(--hue) 35% 94%);
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -747,7 +747,7 @@ textarea {
 }
 
 .tile-date {
-  color: hsl(var(--hue) 18% 55%);
+  color: hsl(var(--hue) 32% 84%);
   font-size: 0.72rem;
 }
 
