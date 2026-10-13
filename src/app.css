@@ -802,7 +802,7 @@ textarea {
 
 /* stored texts look like little books: dark spine on the left, serif title */
 .doc-tile {
-  background: linear-gradient(160deg, hsl(var(--hue) 30% 16%), hsl(var(--hue) 36% 9%));
+  background: hsl(var(--hue) 30% 13%);
   border: 1px solid hsl(var(--hue) 38% 24%);
   border-radius: 3px 9px 9px 3px;
   color: hsl(var(--hue) 55% 76%);
