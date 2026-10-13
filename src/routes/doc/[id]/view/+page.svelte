@@ -10,7 +10,11 @@
   let showResults = $state(false);
   let showShare = $state(false);
   onMount(() => {
-    showResults = typeof myResults()[data.id] === "number";
+    const test = data.doc.test || {};
+    const solved = [test.order, test.events].some(
+      (part) => part?.score && part.score.total,
+    );
+    showResults = typeof myResults()[data.id] === "number" || solved;
     showShare = myDocs().includes(data.id);
   });
 
