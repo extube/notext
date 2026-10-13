@@ -1,11 +1,37 @@
 <script>
-  import { LANGUAGES } from "$lib/languages.js";
+  import { onMount } from "svelte";
+  import { FLAGS, LANGUAGES } from "$lib/languages.js";
+  import { myDocs, myResults } from "$lib/browser.js";
 
-  let { form } = $props();
+  let { form, data } = $props();
 
   let fileInput = $state();
   let fileName = $state("");
   const today = new Date().toISOString().slice(0, 10);
+
+  /* Browser-only marks: documents created here get the corner pin, solved
+     tests show a colored percent — both come from localStorage. */
+  let mine = $state({});
+  let results = $state({});
+  onMount(() => {
+    mine = Object.fromEntries(myDocs().map((id) => [id, true]));
+    results = myResults();
+  });
+
+  function level(percent) {
+    if (percent >= 80) {
+      return "pct-high";
+    }
+    if (percent >= 50) {
+      return "pct-mid";
+    }
+    return "pct-low";
+  }
+
+  function tilePercent(doc) {
+    const percent = results[doc.id] ?? doc.score;
+    return typeof percent === "number" ? percent : null;
+  }
 </script>
 
 <header class="site-header">
@@ -70,6 +96,29 @@
       <span class="muted small">{fileName || ".txt / .md"}</span>
     </div>
   </form>
+
+  {#if data.docs.length}
+    <section class="docs">
+      <h2 class="docs-title">Stored texts</h2>
+      <div class="docs-grid">
+        {#each data.docs as doc (doc.id)}
+          <a href="/doc/{doc.id}/read" class="doc-tile" style="--hue: {doc.hue}" data-id={doc.id}>
+            {#if mine[doc.id]}
+              <span class="tile-mark" aria-label="created in this browser">📌</span>
+            {/if}
+            <span class="tile-flag">{FLAGS[doc.language] ?? "🌐"}</span>
+            <span class="tile-title">{doc.title}</span>
+            {#if doc.date}
+              <span class="tile-date">{doc.date}</span>
+            {/if}
+            {#if tilePercent(doc) !== null}
+              <span class="tile-pct {level(tilePercent(doc))}">{tilePercent(doc)}%</span>
+            {/if}
+          </a>
+        {/each}
+      </div>
+    </section>
+  {/if}
 </main>
 
 <footer class="site-footer">

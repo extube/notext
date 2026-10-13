@@ -1,5 +1,7 @@
 <script>
+  import { onMount } from "svelte";
   import { goto } from "$app/navigation";
+  import { rememberDoc } from "$lib/browser.js";
   import {
     chatCall,
     cleanReformulation,
@@ -11,6 +13,9 @@
   } from "$lib/llm.js";
 
   let { data } = $props();
+
+  /* remember the created document id for this browser */
+  onMount(() => rememberDoc(data.id));
 
   /* Checklist: the text arrives parsed from the create form, then the
      test parts are generated and saved; each request already stores its
@@ -72,7 +77,7 @@
   }
 
   async function upgradeEvents(info, provider, language) {
-    const facts = await fetchFacts(provider, info.text, language, 120000);
+    const facts = await fetchFacts(provider, info.text, language, 240000);
     return { events: validateEvents(facts) };
   }
 

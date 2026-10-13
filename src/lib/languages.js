@@ -7,3 +7,13 @@ export const LANGUAGES = [
   ["it", "Italian"],
   ["de", "German"],
 ];
+
+export const FLAGS = {
+  ru: "🇷🇺",
+  fr: "🇫🇷",
+  "en-GB": "🇬🇧",
+  "en-US": "🇺🇸",
+  es: "🇪🇸",
+  it: "🇮🇹",
+  de: "🇩🇪",
+};

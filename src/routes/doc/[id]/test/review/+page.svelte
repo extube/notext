@@ -8,6 +8,15 @@
   let status = $state("");
   let notice = $state("");
 
+  /* back follows the browser history, not the main menu */
+  function back() {
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      window.location.href = "/";
+    }
+  }
+
   async function regenerate(endpoint, stateKey) {
     status = endpoint;
     notice = "";
@@ -40,7 +49,7 @@
 </header>
 
 <main class="page doc-page">
-  <div class="back-row"><a class="btn" href="/">Back</a></div>
+  <div class="back-row"><button class="btn" type="button" onclick={back}>Back</button></div>
 
   {#if notice}
     <p class="status error" role="alert">{notice}</p>

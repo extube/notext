@@ -1,5 +1,18 @@
 <script>
+  import { onMount } from "svelte";
+  import { saveResult } from "$lib/browser.js";
+
   let { data } = $props();
+
+  /* keep the browser-side record of the result for the main menu */
+  onMount(() => {
+    const solved = data.parts.filter((part) => part.score);
+    if (solved.length) {
+      const correct = solved.reduce((sum, part) => sum + part.score.correct, 0);
+      const total = solved.reduce((sum, part) => sum + part.score.total, 0);
+      saveResult(data.id, Math.round((100 * correct) / total));
+    }
+  });
 
   /* Big percent per part, colored by how much was right: green from 80%,
      amber from 50%, dark red below. */

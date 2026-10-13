@@ -1,6 +1,21 @@
 import { fail, redirect } from "@sveltejs/kit";
 import { parseText } from "$lib/server/parser.js";
-import { saveDoc } from "$lib/server/storage.js";
+import { listDocs, saveDoc } from "$lib/server/storage.js";
+
+/* Tile color varies with the document: a stable hue from title, date and
+   origin language so equal inputs always look alike. */
+function tileHue(title, date, language) {
+  let value = 7;
+  for (const ch of `${title || ""}|${date || ""}|${language || ""}`) {
+    value = (value * 31 + ch.codePointAt(0)) % 36007;
+  }
+  return (value * 7) % 360;
+}
+
+export function load() {
+  const docs = listDocs().map((doc) => ({ ...doc, hue: tileHue(doc.title, doc.date, doc.language) }));
+  return { docs };
+}
 
 export const actions = {
   default: async ({ request }) => {

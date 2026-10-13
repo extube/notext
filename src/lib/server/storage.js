@@ -90,3 +90,45 @@ export function loadLink(linkId) {
     return null;
   }
 }
+
+/* Everything stored so far, newest first: title, origin language and a
+   summary percent across solved test parts (null while unsolved). */
+export function listDocs() {
+  let entries;
+  try {
+    entries = fs.readdirSync(DATA_DIR);
+  } catch {
+    return [];
+  }
+  const docs = [];
+  for (const entry of entries) {
+    if (!entry.endsWith(".json") || !ID_RE.test(entry.slice(0, -5))) continue;
+    const id = entry.slice(0, -5);
+    try {
+      const doc = JSON.parse(fs.readFileSync(path.join(DATA_DIR, entry), "utf8"));
+      const test = doc.test || {};
+      const percents = [test.order, test.events]
+        .map((part) =>
+          part?.score && part.score.total
+            ? (100 * part.score.correct) / part.score.total
+            : null,
+        )
+        .filter((percent) => typeof percent === "number");
+      docs.push({
+        id,
+        title: doc.title || "Untitled",
+        date: doc.date || "",
+        language: doc.language || "",
+        score: percents.length
+          ? Math.round(percents.reduce((sum, p) => sum + p, 0) / percents.length)
+          : null,
+      });
+    } catch {
+      // skip unreadable documents
+    }
+  }
+  docs.sort(
+    (a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : a.title.localeCompare(b.title)),
+  );
+  return docs;
+}
