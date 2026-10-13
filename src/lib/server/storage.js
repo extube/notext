@@ -104,6 +104,7 @@ export function listDocs() {
   for (const entry of entries) {
     if (!entry.endsWith(".json") || !ID_RE.test(entry.slice(0, -5))) continue;
     const id = entry.slice(0, -5);
+    if (id === "settings") continue; // owner-managed site config, not a document
     try {
       const doc = JSON.parse(fs.readFileSync(path.join(DATA_DIR, entry), "utf8"));
       const test = doc.test || {};
