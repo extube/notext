@@ -102,7 +102,7 @@
       <h2 class="docs-title">Stored texts</h2>
       <div class="docs-grid">
         {#each data.docs as doc (doc.id)}
-          <a href="/doc/{doc.id}/read" class="doc-tile" style="--hue: {doc.hue}" data-id={doc.id}>
+          <a href="/doc/{doc.id}/view" class="doc-tile" style="--hue: {doc.hue}" data-id={doc.id}>
             {#if mine[doc.id]}
               <span class="tile-mark" aria-label="created in this browser">📌</span>
             {/if}
