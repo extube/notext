@@ -809,7 +809,7 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  min-height: 7.2rem;
+  min-height: 9.5rem;
   padding: 0.85rem 0.85rem 0.85rem 1.5rem;
   position: relative;
   text-decoration: none;
