@@ -56,7 +56,7 @@
 <main class="page">
   <form class="card" method="POST" enctype="multipart/form-data">
     <h1>Import text</h1>
-    <p class="muted">Type or paste text, or upload a file. Blank lines separate parts.</p>
+    <p class="muted">Type or paste text, or upload a file.</p>
     {#if form?.error}
       <p class="status error">{form.error}</p>
     {/if}
