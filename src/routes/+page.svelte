@@ -73,7 +73,7 @@
     </div>
 
     <div class="field">
-      <label for="text">Text</label>
+      <label for="text">Content</label>
       <textarea id="text" name="text" spellcheck="false" placeholder="Paste your text here…">{form?.values?.text ?? ""}</textarea>
     </div>
 
