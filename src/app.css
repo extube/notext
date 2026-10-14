@@ -721,8 +721,8 @@ textarea {
 
 .doc-tile {
   background: hsl(var(--hue) 62% 44%);
+  border: 1px solid hsl(var(--hue) 62% 52%);
   border-radius: 3px 9px 9px 3px;
-  box-shadow: 0 2px 0 hsl(var(--hue) 62% 34%);
   color: #ffffff;
   display: flex;
   flex-direction: column;
@@ -731,7 +731,7 @@ textarea {
   padding: 0.85rem 0.85rem 0.85rem 1.5rem;
   position: relative;
   text-decoration: none;
-  transition: box-shadow 0.15s ease, transform 0.15s ease;
+  transition: border-color 0.15s ease;
 }
 
 .doc-tile::before {
@@ -747,8 +747,7 @@ textarea {
 
 .doc-tile:hover,
 .doc-tile:focus-visible {
-  box-shadow: 0 5px 0 hsl(var(--hue) 62% 28%);
-  transform: translateY(-2px);
+  border-color: hsl(var(--hue) 62% 68%);
 }
 
 .tile-flag {
@@ -770,4 +769,31 @@ textarea {
 .tile-date {
   font-size: 0.72rem;
   color: rgba(255, 255, 255, 0.78);
+}
+
+.tile-mark {
+  font-size: 0.9rem;
+  position: absolute;
+  right: 0.45rem;
+  top: 0.45rem;
+}
+
+.tile-pct {
+  bottom: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  position: absolute;
+  right: 0.45rem;
+}
+
+.tile-pct.pct-high {
+  color: rgb(7 59 38);
+}
+
+.tile-pct.pct-mid {
+  color: rgb(92 45 8);
+}
+
+.tile-pct.pct-low {
+  color: rgb(88 12 12);
 }
