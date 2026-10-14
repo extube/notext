@@ -20,7 +20,14 @@
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
   font-size: 17px;
   line-height: 1.55;
   min-height: 100vh;
@@ -181,7 +188,9 @@ textarea {
   padding: 0.5rem 1rem;
   cursor: pointer;
   text-decoration: none;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .btn:hover {
@@ -318,7 +327,10 @@ textarea {
   padding: 0.15rem 0.55rem;
   cursor: pointer;
   opacity: 0.5;
-  transition: opacity 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .block:hover .copy-btn,
@@ -382,7 +394,9 @@ textarea {
   width: 1.7rem;
   height: 1.7rem;
   cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .popup-close:hover {
@@ -500,7 +514,8 @@ textarea {
   gap: 0.6rem;
 }
 
-/* result page: per-part percent statistics */.score-row {
+/* result page: per-part percent statistics */
+.score-row {
   border: 1px solid var(--border);
   border-radius: 8px;
   margin-bottom: 0.9rem;
@@ -534,7 +549,6 @@ textarea {
 .score-line {
   margin-top: 0.15rem;
 }
-
 
 .quiz-q {
   border: 1px solid var(--border);
@@ -629,7 +643,6 @@ textarea {
   gap: 1.5rem;
 }
 
-
 .field-input {
   width: 100%;
   background: var(--bg);
@@ -686,7 +699,6 @@ textarea {
 .begin-test {
   user-select: none;
 }
-
 
 /* main menu: stored texts as a grid of tiles, a stable hue per document */
 .docs {
@@ -760,7 +772,14 @@ textarea {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 4;
   display: -webkit-box;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
   font-size: 0.9rem;
   font-weight: 700;
   letter-spacing: 0.01em;
@@ -813,37 +832,4 @@ textarea {
 
 .tile-pct.pct-low {
   color: rgb(255 88 88);
-}
-
-
-/* add entry on the main menu: a whole-width tile styled like texts */
-.add-tile {
-  align-items: center;
-  background: hsl(205 60% 38%);
-  border: 1px solid hsl(205 60% 46%);
-  border-radius: 3px 9px 9px 3px;
-  color: #ffffff;
-  display: flex;
-  font-size: 1rem;
-  font-weight: 700;
-  justify-content: center;
-  min-height: 3.6rem;
-  padding: 0.85rem 0.85rem 0.85rem 1.5rem;
-  position: relative;
-  transition: border-color 0.15s ease;
-}
-
-.add-tile::before {
-  background: hsl(205 60% 27%);
-  border-right: 1px solid hsl(205 60% 32%);
-  content: "";
-  height: 100%;
-  left: 0;
-  position: absolute;
-  top: 0;
-  width: 0.7rem;
-}
-
-.add-tile:hover {
-  border-color: hsl(205 62% 65%);
 }

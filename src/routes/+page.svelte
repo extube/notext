@@ -36,7 +36,7 @@
 </header>
 
 <main class="page">
-  <a class="docs-all add-tile" href="/form">add my own</a>
+  <a class="btn primary docs-all" href="/form">Add my own</a>
 
   {#if data.docs.length}
     <section class="docs">
