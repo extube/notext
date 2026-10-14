@@ -758,12 +758,13 @@ textarea {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 4;
   display: -webkit-box;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 1rem;
-  font-weight: 700;
-  line-height: 1.28;
+  font-family: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+  font-size: 1.06rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  line-height: 1.26;
   overflow-wrap: anywhere;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.18);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.22);
 }
 
 .tile-date {
