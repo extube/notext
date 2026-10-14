@@ -43,9 +43,6 @@
           {/if}
           <span class="tile-flag">{FLAGS[doc.language] ?? "🌐"}</span>
           <span class="tile-title">{doc.title}</span>
-          {#if doc.date}
-            <span class="tile-date">{doc.date}</span>
-          {/if}
           {#if tilePercent(doc) !== null}
             <span class="tile-pct {level(tilePercent(doc))}">{tilePercent(doc)}%</span>
           {/if}

@@ -7,7 +7,6 @@
 
   let fileInput = $state();
   let fileName = $state("");
-  const today = new Date().toISOString().slice(0, 10);
 
   /* Browser-only marks: documents created here get the corner pin, solved
      tests show a colored percent — both come from localStorage. */
@@ -53,10 +52,6 @@
     </div>
 
     <div class="row">
-      <div class="field">
-        <label for="date">Date</label>
-        <input type="date" id="date" name="date" value={form?.values?.date || today} />
-      </div>
       <div class="field">
         <label for="language">Text language</label>
         <select id="language" name="language">
@@ -108,9 +103,6 @@
             {/if}
             <span class="tile-flag">{FLAGS[doc.language] ?? "🌐"}</span>
             <span class="tile-title">{doc.title}</span>
-            {#if doc.date}
-              <span class="tile-date">{doc.date}</span>
-            {/if}
             {#if tilePercent(doc) !== null}
               <span class="tile-pct {level(tilePercent(doc))}">{tilePercent(doc)}%</span>
             {/if}

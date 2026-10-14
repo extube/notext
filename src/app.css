@@ -746,11 +746,6 @@ textarea {
   overflow-wrap: anywhere;
 }
 
-.tile-date {
-  color: hsl(var(--hue) 32% 84%);
-  font-size: 0.72rem;
-}
-
 .tile-mark {
   font-size: 0.9rem;
   position: absolute;
