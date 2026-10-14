@@ -105,6 +105,13 @@ h1 {
   color: var(--muted);
 }
 
+/* settings: short note under a part title — smaller but readable */
+.part-note {
+  color: var(--muted);
+  font-size: 0.8rem;
+  opacity: 1;
+}
+
 .small {
   font-size: 0.8rem;
 }
@@ -257,12 +264,12 @@ textarea {
 }
 
 .part-title {
-  color: var(--muted);
-  font-size: 0.8rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   margin-bottom: 0.5rem;
+  margin-top: 1.25rem;
 }
 
 .sentence {

@@ -43,14 +43,13 @@
 
   <div class="card">
     <h1>Settings</h1>
-    <p class="muted">Stored only in your browser.</p>
 
     <h2 class="part-title">Default language</h2>
-    <p class="muted">Preselected as the text language of new documents.</p>
+    <p class="part-note">Preselected as the text language of new documents.</p>
     <LangPicker value={defaultLanguage} onpick={pickDefault} />
 
     <h2 class="part-title">Translate to</h2>
-    <p class="muted">Used automatically as the translation language of new texts.</p>
+    <p class="part-note">Used automatically as the translation language of new texts.</p>
     <LangPicker none value={translateTo} onpick={pickTranslate} />
 
     <h2 class="part-title">LLM setup</h2>
