@@ -849,3 +849,30 @@ textarea {
   margin-left: auto;
   padding: 0.35rem 0.9rem;
 }
+
+
+/* language pickers: one flag button per language, the chosen one lit up */
+.lang-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.lang-btn {
+  background: transparent;
+  border: 1px solid var(--border-hi);
+  border-radius: 6px;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 1.05rem;
+  line-height: 1;
+  padding: 0.4rem 0.6rem;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.lang-btn:hover,
+.lang-btn.sel {
+  border-color: var(--accent);
+  color: var(--accent);
+}

@@ -1,5 +1,6 @@
 <script>
   import { onMount } from "svelte";
+  import LangPicker from "$lib/components/LangPicker.svelte";
   import { FLAGS, LANGUAGES } from "$lib/languages.js";
   import { myDocs, myResults } from "$lib/browser.js";
 
@@ -8,12 +9,8 @@
   let fileInput = $state();
   let fileName = $state("");
 
-  /* Text language: one click on the flag button cycles the list. */
+  /* Text language: pick one flag button of the row. */
   let language = $state(LANGUAGES[0][0]);
-  function nextLanguage() {
-    const index = LANGUAGES.findIndex(([code]) => code === language);
-    language = LANGUAGES[(index + 1) % LANGUAGES.length][0];
-  }
 
   /* Translation language comes from the user's own settings. */
   let translateTo = $state("");
@@ -61,10 +58,8 @@
     </div>
 
     <div class="field">
-      <label for="language_button">Text language</label>
-      <button type="button" class="btn" id="language_button" onclick={nextLanguage}>
-        {FLAGS[language]} {LANGUAGES.find(([code]) => code === language)?.[1]}
-      </button>
+      <label>Text language</label>
+      <LangPicker value={language} onpick={(code) => (language = code)} />
       <input type="hidden" name="language" bind:value={language} />
     </div>
 

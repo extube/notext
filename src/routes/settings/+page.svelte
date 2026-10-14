@@ -1,6 +1,6 @@
 <script>
   import { detectModel } from "$lib/llm.js";
-  import { LANGUAGES } from "$lib/languages.js";
+  import LangPicker from "$lib/components/LangPicker.svelte";
 
   /* The site LLM server (settings.json) is owner-managed — users can only
      configure their own API, stored in this browser (localStorage), never
@@ -163,13 +163,8 @@
       Used automatically as the translation language of new texts.
     </p>
     <div class="field">
-      <label for="translate_to">Translate to</label>
-      <select id="translate_to" bind:value={translateTo} onchange={saveTranslate}>
-        <option value="">Not set</option>
-        {#each LANGUAGES as [value, name]}
-          <option value={value} selected={translateTo === value}>{name}</option>
-        {/each}
-      </select>
+      <label>Translate to</label>
+      <LangPicker none value={translateTo} onpick={(code) => (translateTo = code)} />
     </div>
 
     <div class="actions">
