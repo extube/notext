@@ -55,7 +55,7 @@
 
 <main class="page">
   <form class="card" method="POST" enctype="multipart/form-data">
-    <h1>New document</h1>
+    <h1>Import text</h1>
     <p class="muted">Type or paste text, or upload a file. Blank lines separate parts.</p>
     {#if form?.error}
       <p class="status error">{form.error}</p>
@@ -63,7 +63,7 @@
 
     <div class="field">
       <label for="title">Title</label>
-      <input type="text" id="title" name="title" placeholder="Untitled" value={form?.values?.title ?? ""} />
+      <input type="text" id="title" name="title" placeholder="Add a title for your text" value={form?.values?.title ?? ""} />
     </div>
 
     <div class="field">
