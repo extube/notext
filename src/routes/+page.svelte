@@ -36,7 +36,7 @@
 </header>
 
 <main class="page">
-  <a class="btn primary docs-all add-tile" href="/form" aria-label="Add my own text">➕</a>
+  <a class="docs-all add-tile" href="/form">add my own</a>
 
   {#if data.docs.length}
     <section class="docs">

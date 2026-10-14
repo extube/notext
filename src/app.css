@@ -816,8 +816,34 @@ textarea {
 }
 
 
-/* add entry on the main menu: whole width, only the plus sign */
+/* add entry on the main menu: a whole-width tile styled like texts */
 .add-tile {
-  font-size: 1.5rem;
-  padding: 0.7rem;
+  align-items: center;
+  background: hsl(205 60% 38%);
+  border: 1px solid hsl(205 60% 46%);
+  border-radius: 3px 9px 9px 3px;
+  color: #ffffff;
+  display: flex;
+  font-size: 1rem;
+  font-weight: 700;
+  justify-content: center;
+  min-height: 3.6rem;
+  padding: 0.85rem 0.85rem 0.85rem 1.5rem;
+  position: relative;
+  transition: border-color 0.15s ease;
+}
+
+.add-tile::before {
+  background: hsl(205 60% 27%);
+  border-right: 1px solid hsl(205 60% 32%);
+  content: "";
+  height: 100%;
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 0.7rem;
+}
+
+.add-tile:hover {
+  border-color: hsl(205 62% 65%);
 }
