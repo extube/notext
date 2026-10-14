@@ -841,3 +841,11 @@ textarea {
 .tile-pct.pct-low {
   color: rgb(255 88 88);
 }
+
+
+/* settings entry in the page header, styled like the form create button */
+.hdr-settings {
+  font-size: 0.8rem;
+  margin-left: auto;
+  padding: 0.35rem 0.9rem;
+}

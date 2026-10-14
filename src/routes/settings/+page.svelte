@@ -1,15 +1,26 @@
 <script>
   import { detectModel } from "$lib/llm.js";
+  import { LANGUAGES } from "$lib/languages.js";
 
   /* The site LLM server (settings.json) is owner-managed — users can only
      configure their own API, stored in this browser (localStorage), never
      sent to the server. */
   const USER_LLM_KEY = "nt.user_llm";
+  const TRANSLATE_KEY = "nt.translate";
   let userBase = $state("");
   let userKey = $state("");
   let userModel = $state("");
   let userStatus = $state("");
   let userError = $state("");
+  let translateTo = $state("");
+
+  function loadTranslate() {
+    translateTo = localStorage.getItem(TRANSLATE_KEY) || "";
+  }
+
+  function saveTranslate() {
+    localStorage.setItem(TRANSLATE_KEY, translateTo);
+  }
 
   function loadUserProvider() {
     try {
@@ -85,6 +96,7 @@
 
   $effect(() => {
     loadUserProvider();
+    loadTranslate();
   });
 </script>
 
@@ -144,6 +156,20 @@
           autocomplete="off"
         />
       </div>
+    </div>
+
+    <h2 class="part-title">Translation language (this browser)</h2>
+    <p class="muted">
+      Used automatically as the translation language of new texts.
+    </p>
+    <div class="field">
+      <label for="translate_to">Translate to</label>
+      <select id="translate_to" bind:value={translateTo} onchange={saveTranslate}>
+        <option value="">Not set</option>
+        {#each LANGUAGES as [value, name]}
+          <option value={value} selected={translateTo === value}>{name}</option>
+        {/each}
+      </select>
     </div>
 
     <div class="actions">

@@ -1,15 +1,26 @@
 <script>
   import { onMount } from "svelte";
-  import { FLAGS } from "$lib/languages.js";
+  import { FLAGS, LANGUAGES } from "$lib/languages.js";
   import { myDocs, myResults } from "$lib/browser.js";
 
   let { form, data } = $props();
 
-  /* Browser-only marks: documents created here get the corner pin, solved
-     tests show a colored percent — both come from localStorage. */
+  let fileInput = $state();
+  let fileName = $state("");
+
+  /* Text language: one click on the flag button cycles the list. */
+  let language = $state(LANGUAGES[0][0]);
+  function nextLanguage() {
+    const index = LANGUAGES.findIndex(([code]) => code === language);
+    language = LANGUAGES[(index + 1) % LANGUAGES.length][0];
+  }
+
+  /* Translation language comes from the user's own settings. */
+  let translateTo = $state("");
   let mine = $state({});
   let results = $state({});
   onMount(() => {
+    translateTo = localStorage.getItem("nt.translate") || "";
     mine = Object.fromEntries(myDocs().map((id) => [id, true]));
     results = myResults();
   });
@@ -33,10 +44,51 @@
 <header class="site-header">
   <span class="brand">notext</span>
   <span class="tagline">read &amp; translate to learn</span>
+  <a class="btn primary hdr-settings" href="/settings">Settings</a>
 </header>
 
 <main class="page">
-  <a class="btn primary docs-all" href="/form">Add my own</a>
+  <form class="card" method="POST" enctype="multipart/form-data">
+    <h1>New document</h1>
+    <p class="muted">Type or paste text, or upload a file. Blank lines separate parts.</p>
+    {#if form?.error}
+      <p class="status error">{form.error}</p>
+    {/if}
+
+    <div class="field">
+      <label for="title">Title</label>
+      <input type="text" id="title" name="title" placeholder="Untitled" value={form?.values?.title ?? ""} />
+    </div>
+
+    <div class="field">
+      <label for="language_button">Text language</label>
+      <button type="button" class="btn" id="language_button" onclick={nextLanguage}>
+        {FLAGS[language]} {LANGUAGES.find(([code]) => code === language)?.[1]}
+      </button>
+      <input type="hidden" name="language" bind:value={language} />
+    </div>
+
+    <div class="field">
+      <label for="text">Text</label>
+      <textarea id="text" name="text" spellcheck="false" placeholder="Paste your text here…">{form?.values?.text ?? ""}</textarea>
+    </div>
+
+    <input type="hidden" name="translate_to" bind:value={translateTo} />
+
+    <div class="actions">
+      <button type="submit" class="btn primary">Create</button>
+      <button type="button" class="btn" onclick={() => fileInput.click()}>Upload</button>
+      <input
+        type="file"
+        name="file"
+        accept=".txt,.md,text/plain"
+        hidden
+        bind:this={fileInput}
+        onchange={(event) => (fileName = event.target.files[0]?.name ?? "")}
+      />
+      <span class="muted small">{fileName || ".txt / .md"}</span>
+    </div>
+  </form>
 
   {#if data.docs.length}
     <section class="docs">
@@ -63,5 +115,5 @@
 </main>
 
 <footer class="site-footer">
-  <span><a href="/form">New document</a> · notext · pages are rendered on the server</span>
+  <span>notext · pages are rendered on the server</span>
 </footer>
