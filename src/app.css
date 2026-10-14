@@ -797,25 +797,27 @@ textarea {
 
 /* stored texts look like little books: dark spine on the left, serif title */
 .doc-tile {
-  background: hsl(var(--hue) 30% 13%);
-  border: 1px solid hsl(var(--hue) 38% 24%);
+  background: hsl(var(--hue, 30) 30% 16%);
+  border: 1px solid hsl(var(--hue, 30) 38% 27%);
   border-radius: 3px 9px 9px 3px;
-  color: hsl(var(--hue) 55% 76%);
+  color: hsl(var(--hue, 30) 55% 80%);
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
   min-height: 9.5rem;
+  opacity: 1;
   padding: 0.85rem 0.85rem 0.85rem 1.5rem;
   position: relative;
   text-decoration: none;
 }
 
 .doc-tile::before {
-  background: hsl(var(--hue) 36% 8%);
-  border-right: 1px solid hsl(var(--hue) 40% 26%);
+  background: hsl(var(--hue, 30) 36% 11%);
+  border-right: 1px solid hsl(var(--hue, 30) 40% 29%);
   content: "";
   height: 100%;
   left: 0;
+  opacity: 1;
   position: absolute;
   top: 0;
   width: 0.7rem;
