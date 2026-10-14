@@ -731,6 +731,14 @@ textarea {
   }
 }
 
+/* main menu: whole-width entries under the tiles */
+.docs-all {
+  display: block;
+  margin-top: 1rem;
+  text-align: center;
+  width: 100%;
+}
+
 .doc-tile {
   background: hsl(var(--hue) 60% 38%);
   border: 1px solid hsl(var(--hue) 62% 52%);
