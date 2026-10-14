@@ -860,9 +860,9 @@ textarea {
 
 /* language pickers: one flag button per language, the chosen one lit up */
 .lang-row {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: 0.45rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .lang-btn {
