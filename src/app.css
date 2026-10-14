@@ -20,7 +20,14 @@
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
   font-size: 17px;
   line-height: 1.55;
   min-height: 100vh;
@@ -96,6 +103,13 @@ h1 {
 
 .muted {
   color: var(--muted);
+}
+
+/* settings: short note under a part title — smaller but readable */
+.part-note {
+  color: var(--muted);
+  font-size: 0.8rem;
+  opacity: 1;
 }
 
 .small {
@@ -181,7 +195,9 @@ textarea {
   padding: 0.5rem 1rem;
   cursor: pointer;
   text-decoration: none;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .btn:hover {
@@ -248,12 +264,12 @@ textarea {
 }
 
 .part-title {
-  color: var(--muted);
-  font-size: 0.8rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   margin-bottom: 0.5rem;
+  margin-top: 1.25rem;
 }
 
 .sentence {
@@ -318,7 +334,10 @@ textarea {
   padding: 0.15rem 0.55rem;
   cursor: pointer;
   opacity: 0.5;
-  transition: opacity 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .block:hover .copy-btn,
@@ -382,7 +401,9 @@ textarea {
   width: 1.7rem;
   height: 1.7rem;
   cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .popup-close:hover {
@@ -500,7 +521,8 @@ textarea {
   gap: 0.6rem;
 }
 
-/* result page: per-part percent statistics */.score-row {
+/* result page: per-part percent statistics */
+.score-row {
   border: 1px solid var(--border);
   border-radius: 8px;
   margin-bottom: 0.9rem;
@@ -534,7 +556,6 @@ textarea {
 .score-line {
   margin-top: 0.15rem;
 }
-
 
 .quiz-q {
   border: 1px solid var(--border);
@@ -629,7 +650,6 @@ textarea {
   gap: 1.5rem;
 }
 
-
 .field-input {
   width: 100%;
   background: var(--bg);
@@ -687,7 +707,6 @@ textarea {
   user-select: none;
 }
 
-
 /* main menu: stored texts as a grid of tiles, a stable hue per document */
 .docs {
   margin-top: 2rem;
@@ -719,67 +738,7 @@ textarea {
   }
 }
 
-.doc-tile {
-  color: hsl(var(--hue) 55% 76%);
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  position: relative;
-  text-decoration: none;
-}
-
-.doc-tile:hover {
-  border-color: hsl(var(--hue) 45% 40%);
-}
-
-.tile-flag {
-  font-size: 1.05rem;
-}
-
-.tile-title {
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  display: -webkit-box;
-  font-size: 0.92rem;
-  font-weight: 600;
-  line-height: 1.3;
-  overflow-wrap: anywhere;
-}
-
-.tile-date {
-  color: hsl(var(--hue) 18% 55%);
-  font-size: 0.72rem;
-}
-
-.tile-mark {
-  font-size: 0.9rem;
-  position: absolute;
-  right: 0.45rem;
-  top: 0.45rem;
-}
-
-.tile-pct {
-  bottom: 0.4rem;
-  font-size: 0.82rem;
-  font-weight: 600;
-  position: absolute;
-  right: 0.45rem;
-}
-
-.tile-pct.pct-high {
-  color: var(--accent);
-}
-
-.tile-pct.pct-mid {
-  color: rgb(219 143 45);
-}
-
-.tile-pct.pct-low {
-  color: rgb(197 74 74);
-}
-
-
-/* main menu: all texts entry, full width below the tiles */
+/* main menu: whole-width entries under the tiles */
 .docs-all {
   display: block;
   margin-top: 1rem;
@@ -787,37 +746,24 @@ textarea {
   width: 100%;
 }
 
-/* list page: prev / next */
-.pager {
-  align-items: center;
-  display: flex;
-  gap: 0.8rem;
-  justify-content: center;
-  margin-top: 1.4rem;
-}
-
-.pager-info {
-  font-size: 0.9rem;
-}
-
-/* stored texts look like little books: dark spine on the left, serif title */
 .doc-tile {
-  background: linear-gradient(160deg, hsl(var(--hue) 30% 16%), hsl(var(--hue) 36% 9%));
-  border: 1px solid hsl(var(--hue) 38% 24%);
+  background: hsl(var(--hue) 60% 38%);
+  border: 1px solid hsl(var(--hue) 62% 52%);
   border-radius: 3px 9px 9px 3px;
-  color: hsl(var(--hue) 55% 76%);
+  color: #ffffff;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  min-height: 9.5rem;
+  min-height: 11.5rem;
   padding: 0.85rem 0.85rem 0.85rem 1.5rem;
   position: relative;
   text-decoration: none;
+  transition: border-color 0.15s ease;
 }
 
 .doc-tile::before {
-  background: hsl(var(--hue) 36% 8%);
-  border-right: 1px solid hsl(var(--hue) 40% 26%);
+  background: hsl(var(--hue) 60% 27%);
+  border-right: 1px solid hsl(var(--hue) 60% 32%);
   content: "";
   height: 100%;
   left: 0;
@@ -826,6 +772,114 @@ textarea {
   width: 0.7rem;
 }
 
+.doc-tile:hover,
+.doc-tile:focus-visible {
+  border-color: hsl(var(--hue) 62% 68%);
+}
+
+.tile-flag {
+  align-self: flex-start;
+  font-size: 1.05rem;
+  margin: -0.3rem 0 0.15rem;
+}
+
 .tile-title {
-  font-family: Georgia, "Times New Roman", serif;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  display: -webkit-box;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.26;
+  overflow-wrap: anywhere;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.22);
+}
+
+.tile-date {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.tile-mark {
+  bottom: 0.45rem;
+  font-size: 0.9rem;
+  position: absolute;
+  right: 0.45rem;
+}
+
+/* percent hangs from the top edge like a bookmark ribbon */
+/* dark bookmark ribbon hanging from the top edge, bright percent inside */
+.tile-pct {
+  align-items: center;
+  background: hsl(230 12% 10%);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 74%, 0 100%);
+  color: #f5f6f8;
+  display: flex;
+  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.35));
+  font-size: 0.72rem;
+  font-weight: 800;
+  height: 2.6rem;
+  justify-content: center;
+  line-height: 1.2;
+  padding-bottom: 0.7rem;
+  position: absolute;
+  right: 0.9rem;
+  text-align: center;
+  top: 0;
+  width: 2.1rem;
+}
+
+.tile-pct.pct-high {
+  color: var(--accent);
+}
+
+.tile-pct.pct-mid {
+  color: rgb(255 154 40);
+}
+
+.tile-pct.pct-low {
+  color: rgb(255 88 88);
+}
+
+
+/* settings entry in the page header, styled like the form create button */
+.hdr-settings {
+  font-size: 0.8rem;
+  margin-left: auto;
+  padding: 0.35rem 0.9rem;
+}
+
+
+/* language pickers: one flag button per language, the chosen one lit up */
+.lang-row {
+  display: grid;
+  gap: 0.45rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.lang-btn {
+  background: transparent;
+  border: 1px solid var(--border-hi);
+  border-radius: 6px;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 1.05rem;
+  line-height: 1;
+  padding: 0.4rem 0.6rem;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.lang-btn:hover,
+.lang-btn.sel {
+  border-color: var(--accent);
+  color: var(--accent);
 }

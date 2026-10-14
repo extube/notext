@@ -19,7 +19,6 @@ export const actions = {
     const get = (key) => (form.get(key) ?? "").toString();
     const values = {
       title: get("title"),
-      date: get("date"),
       language: get("language"),
       translate_to: get("translate_to"),
       text: get("text"),
@@ -44,7 +43,7 @@ export const actions = {
 
     const doc = parseText(text, {
       title: values.title.trim() || "Untitled",
-      date: values.date,
+      date: new Date().toISOString().slice(0, 10),
       language: values.language,
       translate_to: values.translate_to,
     });
