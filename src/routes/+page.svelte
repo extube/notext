@@ -9,7 +9,8 @@
   let fileInput = $state();
   let fileName = $state("");
 
-  /* Text language: pick one flag button of the row. */
+  /* Text language: pick one flag button of the row; the default comes
+     from the user's settings. */
   let language = $state(LANGUAGES[0][0]);
 
   /* Translation language comes from the user's own settings. */
@@ -18,6 +19,14 @@
   let results = $state({});
   onMount(() => {
     translateTo = localStorage.getItem("nt.translate") || "";
+    try {
+      const saved = JSON.parse(localStorage.getItem("nt.defaults") || "null");
+      if (LANGUAGES.some(([code]) => code === saved?.language)) {
+        language = saved.language;
+      }
+    } catch {
+      // first language stays
+    }
     mine = Object.fromEntries(myDocs().map((id) => [id, true]));
     results = myResults();
   });

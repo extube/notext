@@ -1,102 +1,35 @@
 <script>
-  import { detectModel } from "$lib/llm.js";
   import LangPicker from "$lib/components/LangPicker.svelte";
+  import { LANGUAGES } from "$lib/languages.js";
 
-  /* The site LLM server (settings.json) is owner-managed — users can only
-     configure their own API, stored in this browser (localStorage), never
-     sent to the server. */
-  const USER_LLM_KEY = "nt.user_llm";
+  /* User settings live only in this browser (localStorage):
+     default text language, translation language, own LLM API. */
+  const DEFAULT_KEY = "nt.defaults";
   const TRANSLATE_KEY = "nt.translate";
-  let userBase = $state("");
-  let userKey = $state("");
-  let userModel = $state("");
-  let userStatus = $state("");
-  let userError = $state("");
+
+  let defaultLanguage = $state(LANGUAGES[0][0]);
   let translateTo = $state("");
 
-  function loadTranslate() {
-    translateTo = localStorage.getItem(TRANSLATE_KEY) || "";
+  function pickDefault(code) {
+    defaultLanguage = code;
+    localStorage.setItem(DEFAULT_KEY, JSON.stringify({ language: code }));
   }
 
-  function saveTranslate() {
-    localStorage.setItem(TRANSLATE_KEY, translateTo);
-  }
-
-  function loadUserProvider() {
-    try {
-      const saved = JSON.parse(localStorage.getItem(USER_LLM_KEY) || "null");
-      if (saved) {
-        userBase = saved.base || "";
-        userKey = saved.key || "";
-        userModel = saved.model || "";
-      } else {
-        userStatus = "";
-        return;
-      }
-    } catch {
-      return;
-    }
-    userStatus = userModel
-      ? `on — ${userModel}`
-      : "on — model will be auto-detected";
-  }
-
-  function saveUserProvider() {
-    userError = "";
-    userStatus = "";
-    try {
-      const base = userBase.trim();
-      if (base) {
-        if (!/^https?:\/\//.test(base)) {
-          throw new Error("API URL must start with http:// or https://");
-        }
-        localStorage.setItem(
-          USER_LLM_KEY,
-          JSON.stringify({
-            base,
-            key: userKey.trim(),
-            model: userModel.trim(),
-          }),
-        );
-      } else {
-        localStorage.removeItem(USER_LLM_KEY);
-      }
-      loadUserProvider();
-      userStatus = base ? "Saved in this browser" : "Cleared";
-    } catch (error) {
-      userError = error.message;
-    }
-  }
-
-  function clearUserProvider() {
-    localStorage.removeItem(USER_LLM_KEY);
-    userBase = "";
-    userKey = "";
-    userModel = "";
-    userStatus = "Cleared";
-    userError = "";
-  }
-
-  async function testUserProvider() {
-    userError = "";
-    userStatus = "Testing…";
-    try {
-      const model =
-        userModel.trim() ||
-          await detectModel({
-            base: userBase.trim(),
-            key: userKey.trim(),
-          });
-      userStatus = `works — ${model}`;
-    } catch {
-      userStatus = "";
-      userError = "No connection to your API";
-    }
+  function pickTranslate(code) {
+    translateTo = code;
+    localStorage.setItem(TRANSLATE_KEY, code);
   }
 
   $effect(() => {
-    loadUserProvider();
-    loadTranslate();
+    try {
+      const saved = JSON.parse(localStorage.getItem(DEFAULT_KEY) || "null");
+      if (LANGUAGES.some(([code]) => code === saved?.language)) {
+        defaultLanguage = saved.language;
+      }
+      translateTo = localStorage.getItem(TRANSLATE_KEY) || "";
+    } catch {
+      // defaults stay
+    }
   });
 </script>
 
@@ -110,67 +43,24 @@
 
   <div class="card">
     <h1>Settings</h1>
+    <p class="muted">Stored only in your browser.</p>
 
-    <h2 class="part-title">Your LLM API (this browser)</h2>
+    <h2 class="part-title">Default language</h2>
+    <p class="muted">Preselected as the text language of new documents.</p>
+    <LangPicker value={defaultLanguage} onpick={pickDefault} />
+
+    <h2 class="part-title">Translate to</h2>
+    <p class="muted">Used automatically as the translation language of new texts.</p>
+    <LangPicker none value={translateTo} onpick={pickTranslate} />
+
+    <h2 class="part-title">LLM setup</h2>
     <p class="muted">
-      Stored only in your browser — requests go straight from your browser
-      to your API, nothing is sent to the site server. Leave empty to use
-      the site default.
+      New documents get real sentences from an LLM. Connect your own API —
+      requests go straight from your browser to it, nothing is sent to the
+      site server.
     </p>
-
-    {#if userError}
-      <p class="status error" role="alert">{userError}</p>
-    {/if}
-    {#if userStatus}
-      <p class="status ok">{userStatus}</p>
-    {/if}
-
-    <div class="field">
-      <label for="user_url">API URL</label>
-      <input
-        type="text"
-        id="user_url"
-        bind:value={userBase}
-        placeholder="http://localhost:8000/v1 or https://api.groq.com/openai/v1"
-        autocomplete="off"
-      />
-    </div>
-    <div class="row">
-      <div class="field">
-        <label for="user_key">API key (optional)</label>
-        <input
-          type="password"
-          id="user_key"
-          bind:value={userKey}
-          placeholder="empty — no key"
-          autocomplete="off"
-        />
-      </div>
-      <div class="field">
-        <label for="user_model">Model (optional)</label>
-        <input
-          type="text"
-          id="user_model"
-          bind:value={userModel}
-          placeholder="auto-detect from the API"
-          autocomplete="off"
-        />
-      </div>
-    </div>
-
-    <h2 class="part-title">Translation language (this browser)</h2>
-    <p class="muted">
-      Used automatically as the translation language of new texts.
-    </p>
-    <div class="field">
-      <label>Translate to</label>
-      <LangPicker none value={translateTo} onpick={(code) => (translateTo = code)} />
-    </div>
-
     <div class="actions">
-      <button type="button" class="btn" onclick={testUserProvider}>Test</button>
-      <button type="button" class="btn" onclick={clearUserProvider}>Clear</button>
-      <button type="button" class="btn primary" onclick={saveUserProvider}>Save</button>
+      <a class="btn primary" href="/settings/llm">Set up your own LLM</a>
     </div>
   </div>
 </main>
