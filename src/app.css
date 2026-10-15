@@ -903,6 +903,10 @@ textarea {
   white-space: nowrap;
 }
 
+.gauge-ring {
+  position: relative;
+}
+
 .lookup-gauge svg {
   display: block;
   height: 3.2rem;
