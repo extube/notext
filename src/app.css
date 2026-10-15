@@ -883,3 +883,41 @@ textarea {
   border-color: var(--accent);
   color: var(--accent);
 }
+
+
+/* read page: translation attempt gauge, fixed in the top-right corner;
+   15 lobes, green while attempts remain, hollow once spent */
+.lookup-gauge {
+  pointer-events: none;
+  position: fixed;
+  right: 0.9rem;
+  top: 0.6rem;
+}
+
+.lookup-gauge svg {
+  display: block;
+  height: 3.2rem;
+  width: 3.2rem;
+}
+
+.lobe {
+  fill: none;
+  stroke: rgb(255 255 255 / 0.14);
+  stroke-linecap: round;
+  stroke-width: 7;
+}
+
+.lobe.on {
+  stroke: var(--accent);
+}
+
+.gauge-num {
+  align-items: center;
+  color: var(--text);
+  display: flex;
+  font-size: 0.85rem;
+  font-weight: 700;
+  inset: 0;
+  justify-content: center;
+  position: absolute;
+}

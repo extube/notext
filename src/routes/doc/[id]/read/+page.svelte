@@ -23,6 +23,26 @@
   let selected = $state(null);
   let lookupSeq = 0;
 
+  /* Translation requests are capped per page visit: 15 lookups, each
+     spending one lobe of the gauge in the top-right corner. */
+  const LOOKUP_LIMIT = 15;
+  let lookupsLeft = $state(LOOKUP_LIMIT);
+
+  /* Ring of lobes around the gauge: 15 arcs of equal 24° steps. */
+  function arcPath(a1, a2) {
+    const rad = (deg) => ((deg - 90) * Math.PI) / 180;
+    const r = 26;
+    const x1 = 32 + r * Math.cos(rad(a1));
+    const y1 = 32 + r * Math.sin(rad(a1));
+    const x2 = 32 + r * Math.cos(rad(a2));
+    const y2 = 32 + r * Math.sin(rad(a2));
+    return `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`;
+  }
+  const gaugeLobes = Array.from({ length: LOOKUP_LIMIT }, (_, i) => {
+    const step = 360 / LOOKUP_LIMIT;
+    return arcPath(i * step + 2, (i + 1) * step - 2);
+  });
+
   /* A user's own LLM API lives in this browser (localStorage). When set,
      lookups go straight from the browser to it — nothing through the
      site server. */
@@ -48,6 +68,20 @@
       return;
     }
     const seq = ++lookupSeq;
+    if (lookupsLeft <= 0) {
+      selected = {
+        word,
+        sentence,
+        translation: null,
+        form: null,
+        synonyms: null,
+        part_of_speech: null,
+        alert: "Translation limit reached — no attempts left",
+        loading: false,
+      };
+      return;
+    }
+    lookupsLeft -= 1;
     selected = {
       word,
       sentence,
@@ -145,9 +179,19 @@
   </article>
 </main>
 
+{#if lookupsLeft < LOOKUP_LIMIT}
+  <div class="lookup-gauge" aria-label="{lookupsLeft} of {LOOKUP_LIMIT} translation attempts left">
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      {#each gaugeLobes as lobe, i}
+        <path d={lobe} class="lobe" class:on={i < lookupsLeft} />
+      {/each}
+    </svg>
+    <span class="gauge-num">{lookupsLeft}</span>
+  </div>
+{/if}
+
 {#if selected}
-  <div class="word-popup" role="dialog" aria-label="Word details">
-    <button class="popup-close" type="button" aria-label="Close" onclick={closePopup}>
+  <div class="word-popup" role="dialog" aria-label="Word details">    <button class="popup-close" type="button" aria-label="Close" onclick={closePopup}>
       ×
     </button>
     {#if selected.alert}
