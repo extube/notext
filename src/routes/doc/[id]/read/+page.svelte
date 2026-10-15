@@ -153,9 +153,11 @@
 </header>
 
 <main class="page doc-page">
-  <div class="back-row"><a class="btn" href="/doc/{data.id}/view">Back</a></div>
-  <article class="card doc-card">
+  <div class="back-row">
+    <a class="btn" href="/doc/{data.id}/view">Back</a>
     <a class="btn begin-test" href="/doc/{data.id}/test">Begin testing</a>
+  </div>
+  <article class="card doc-card">
     <h1>{doc.title || "Untitled"}</h1>
     {#each blocks as block, index}
       <div class="block">

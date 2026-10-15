@@ -308,17 +308,14 @@ textarea {
 /* ---- back button / corner button ---- */
 
 .back-row {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
   margin-bottom: 0.75rem;
 }
 
 .doc-card {
   position: relative;
-}
-
-.begin-test {
-  position: absolute;
-  top: 1.75rem;
-  right: 1.75rem;
 }
 
 .copy-btn {
