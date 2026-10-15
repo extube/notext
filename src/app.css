@@ -888,10 +888,19 @@ textarea {
 /* read page: translation attempt gauge, fixed in the top-right corner;
    15 lobes, green while attempts remain, hollow once spent */
 .lookup-gauge {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
   pointer-events: none;
   position: fixed;
   right: 0.9rem;
   top: 0.6rem;
+}
+
+.gauge-label {
+  color: var(--muted);
+  font-size: 0.7rem;
+  white-space: nowrap;
 }
 
 .lookup-gauge svg {
