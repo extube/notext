@@ -34,6 +34,8 @@
 </header>
 
 <main class="page doc-page">
+  <div class="back-row"><a class="btn" href="/">Back</a></div>
+
   {#if data.docs.length}
     <div class="docs-grid">
       {#each data.docs as doc (doc.id)}
@@ -43,9 +45,6 @@
           {/if}
           <span class="tile-flag">{FLAGS[doc.language] ?? "🌐"}</span>
           <span class="tile-title">{doc.title}</span>
-          {#if doc.date}
-            <span class="tile-date">{doc.date}</span>
-          {/if}
           {#if tilePercent(doc) !== null}
             <span class="tile-pct {level(tilePercent(doc))}">{tilePercent(doc)}%</span>
           {/if}
@@ -67,8 +66,6 @@
       {/if}
     </div>
   {/if}
-
-  <div class="back-row"><a class="btn" href="/">Back to main page</a></div>
 </main>
 
 <footer class="site-footer">
