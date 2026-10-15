@@ -897,12 +897,6 @@ textarea {
   top: 0.6rem;
 }
 
-.gauge-label {
-  color: var(--muted);
-  font-size: 0.7rem;
-  white-space: nowrap;
-}
-
 .gauge-ring {
   position: relative;
 }

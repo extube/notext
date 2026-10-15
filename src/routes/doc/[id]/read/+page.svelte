@@ -181,7 +181,6 @@
 
 {#if lookupsLeft < LOOKUP_LIMIT}
   <div class="lookup-gauge" aria-label="{lookupsLeft} of {LOOKUP_LIMIT} translation attempts left">
-    <span class="gauge-label">remaining attempts</span>
     <span class="gauge-ring">
       <svg viewBox="0 0 64 64" aria-hidden="true">
         {#each gaugeLobes as lobe, i}
