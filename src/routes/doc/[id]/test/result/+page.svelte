@@ -25,6 +25,15 @@
     }
     return "pct-low";
   }
+
+  /* Back goes to the previous page in this browser's history. */
+  function back() {
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      window.location.href = "/";
+    }
+  }
 </script>
 
 <header class="site-header">
@@ -33,6 +42,8 @@
 </header>
 
 <main class="page doc-page">
+  <div class="back-row"><button class="btn" type="button" onclick={back}>Back</button></div>
+
   <div class="card">
     <h1>Results</h1>
     <p class="muted">{data.doc.title || "Untitled"}</p>

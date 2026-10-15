@@ -308,17 +308,14 @@ textarea {
 /* ---- back button / corner button ---- */
 
 .back-row {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
   margin-bottom: 0.75rem;
 }
 
 .doc-card {
   position: relative;
-}
-
-.begin-test {
-  position: absolute;
-  top: 1.75rem;
-  right: 1.75rem;
 }
 
 .copy-btn {
@@ -882,4 +879,49 @@ textarea {
 .lang-btn.sel {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+
+/* read page: translation attempt gauge, fixed in the top-right corner;
+   15 lobes, green while attempts remain, hollow once spent */
+.lookup-gauge {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  pointer-events: none;
+  position: fixed;
+  right: 0.9rem;
+  top: 0.6rem;
+}
+
+.gauge-ring {
+  position: relative;
+}
+
+.lookup-gauge svg {
+  display: block;
+  height: 3.2rem;
+  width: 3.2rem;
+}
+
+.lobe {
+  fill: none;
+  stroke: rgb(255 255 255 / 0.14);
+  stroke-linecap: round;
+  stroke-width: 7;
+}
+
+.lobe.on {
+  stroke: var(--accent);
+}
+
+.gauge-num {
+  align-items: center;
+  color: var(--text);
+  display: flex;
+  font-size: 0.85rem;
+  font-weight: 700;
+  inset: 0;
+  justify-content: center;
+  position: absolute;
 }
