@@ -24,6 +24,16 @@ export async function load({ params }) {
           ? test.events.score ?? null
           : null,
       },
+      {
+        key: "questions",
+        title: "Part 3 · Questions",
+        score: test.questions?.items?.length ? test.questions.score ?? null : null,
+      },
+      {
+        key: "arrange",
+        title: "Part 4 · Arrange",
+        score: test.arrange?.items?.length ? test.arrange.score ?? null : null,
+      },
     ],
   };
 }

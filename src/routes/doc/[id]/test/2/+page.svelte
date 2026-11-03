@@ -102,7 +102,7 @@
         {/each}
         <div class="actions">
           <button class="btn" type="button" onclick={solveAgain}>Solve again</button>
-          <a class="btn primary" href="/doc/{data.id}/test/result">Results</a>
+          <a class="btn primary" href="/doc/{data.id}/test/3">Next part</a>
         </div>
       {:else}
         {#each items as item, i}

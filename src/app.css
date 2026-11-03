@@ -511,6 +511,32 @@ textarea {
   color: var(--accent);
 }
 
+/* testing menu: one row per part */
+.test-parts {
+  display: flex;
+  flex-direction: column;
+}
+
+/* process page: async build task → progress bar with a green fill */
+.bar {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  height: 0.7rem;
+  margin: 0.75rem 0 0.6rem;
+  overflow: hidden;
+}
+
+.bar-fill {
+  background: var(--accent);
+  height: 100%;
+  transition: width 0.4s ease;
+}
+
+.bar.error .bar-fill {
+  background: var(--error);
+}
+
 /* process page: ready options row */
 .options {
   display: flex;
@@ -645,6 +671,41 @@ textarea {
 .tf-pick {
   display: flex;
   gap: 1.5rem;
+}
+
+/* questions part: highlighted correct option in the summary */
+.opt.answer-ok {
+  color: var(--accent);
+}
+
+/* arrange part: word chips with tiny reorder arrows */
+.arrange-words {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.35rem 0 0.3rem;
+}
+
+.arrange-word {
+  align-items: center;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  display: inline-flex;
+  gap: 0.3rem;
+  padding: 0.15rem 0.3rem 0.15rem 0.55rem;
+}
+
+.arrange-word .order-btn {
+  font-size: 0.7rem;
+  padding: 0.05rem 0.3rem;
+}
+
+/* arrange part: translation under the sentence */
+.arrange-transl {
+  font-style: italic;
+  font-size: 0.9rem;
+  margin: 0.2rem 0 0.3rem;
 }
 
 .field-input {

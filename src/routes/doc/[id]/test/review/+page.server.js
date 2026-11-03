@@ -9,11 +9,17 @@ export async function load({ params }) {
     error(404, "Document not found");
   }
   const doc = JSON.parse(raw);
-  const order = doc.test?.order ?? null;
-  const events = doc.test?.events ?? null;
-  if (!order?.points?.length && !events?.true?.length) {
+  const test = doc.test || {};
+  const order = test.order ?? null;
+  const events = test.events ?? null;
+  const questions = test.questions ?? null;
+  const arrange = test.arrange ?? null;
+  if (
+    !(order?.points?.length || events?.true?.length ||
+      questions?.items?.length || arrange?.items?.length)
+  ) {
     // the test is built during document processing
     redirect(302, `/process/${params.id}`);
   }
-  return { id: params.id, title: doc.title || "Untitled", order, events };
+  return { id: params.id, title: doc.title || "Untitled", order, events, questions, arrange };
 }
