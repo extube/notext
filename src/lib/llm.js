@@ -317,6 +317,87 @@ export function validatePoints(obj) {
   return { points: points.slice(0, 6) };
 }
 
+export function questionsPrompt(text, language) {
+  const LANGUAGE = NAMES[language] || "the text language";
+  const system =
+    `You read a text and reply with STRICT JSON only — no markdown, no prose, ` +
+    `no comments about the task. JSON schema: {"questions": [{"question": ` +
+    `string, "choices": string[], "answer": number}]}. Rules: write 4 questions ` +
+    `about the events and details of the text, keeping the order of the text; ` +
+    `every question and option is written in ${LANGUAGE} — the language of the ` +
+    `text itself, never translate it; each "choices" array holds exactly 4 ` +
+    `options with only one correct, all four of the same kind of thing (names, ` +
+    `places, objects, actions); "answer" is the zero-based index of the correct ` +
+    `option. Verify you output exactly the schema keys and nothing else.`;
+  const user = `Text:\n\n${text}`;
+  return { system, user };
+}
+
+export function validateQuestions(obj) {
+  const raw = Array.isArray(obj) ? obj : obj?.questions;
+  if (!Array.isArray(raw)) {
+    throw new Error("No questions array");
+  }
+  const items = [];
+  for (const item of raw) {
+    if (!item || typeof item.question !== "string" || !item.question.trim()) {
+      continue;
+    }
+    const choices = (Array.isArray(item.choices) ? item.choices : []).filter(
+      (choice) => typeof choice === "string" && choice.trim(),
+    );
+    const answer = Number(item.answer);
+    if (choices.length < 3 || !Number.isInteger(answer) ||
+        answer < 0 || answer >= choices.length) {
+      continue;
+    }
+    if (items.some((other) => nearDuplicate(other.question, item.question))) {
+      continue;
+    }
+    items.push({
+      question: item.question.trim(),
+      choices: choices.slice(0, 4),
+      answer: Math.min(answer, choices.slice(0, 4).length - 1),
+    });
+    if (items.length >= 4) {
+      break;
+    }
+  }
+  if (items.length < 2) {
+    throw new Error("Need at least 2 usable questions");
+  }
+  return { questions: items };
+}
+
+export function translateLinesPrompt(sentences, from, to) {
+  const FROM = NAMES[from] || "the source language";
+  const TO = NAMES[to] || "the target language";
+  const system =
+    `You translate a numbered list of sentences and reply with STRICT JSON ` +
+    `only — no markdown, no prose. JSON schema: {"translations": string[]}. ` +
+    `Translate each input sentence from ${FROM} into ${TO}; keep the same ` +
+    `order and the same number of items; plain natural sentences only, no ` +
+    `numbering, no notes.`;
+  const user = sentences.map((sentence, i) => `${i + 1}. ${sentence}`).join("\n");
+  return { system, user };
+}
+
+/* Tolerate missing entries: unusable slots come back empty (""), the page
+   simply shows no translation there. */
+export function validateTranslations(obj, count) {
+  const raw = Array.isArray(obj) ? obj : obj?.translations;
+  if (!Array.isArray(raw)) {
+    throw new Error("No translations array");
+  }
+  const translations = raw
+    .slice(0, count)
+    .map((item) => (typeof item === "string" ? item.trim() : ""));
+  if (!translations.some(Boolean)) {
+    throw new Error("No usable translations");
+  }
+  return { translations };
+}
+
 /* A sentence is duplicated when it differs only by punctuation/apostrophes
    or shares ~80% of its words (Levenshtein on the folded keys). */
 export function foldKey(text) {

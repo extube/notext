@@ -1,5 +1,5 @@
 <script>
-  import { onMount } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import { goto } from "$app/navigation";
   import { rememberDoc } from "$lib/browser.js";
   import {
@@ -14,50 +14,15 @@
 
   let { data } = $props();
 
-  /* remember the created document id for this browser */
+  /* The test builds as an async task on the server: each part is stored in
+     the document json as soon as it is ready, so a page reload finds the
+     same stage and only the still missing parts run. The browser polls the
+     progress and paints the bar. */
   onMount(() => rememberDoc(data.id));
 
-  /* Checklist: the text arrives parsed from the create form, then the
-     test parts are generated and saved; each request already stores its
-     json with the document. */
-  async function buildPart(step) {
-    const res = await fetch(step.path, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ id: data.id }),
-    });
-    const info = await res.json();
-    if (!res.ok) {
-      throw new Error(info.error || `HTTP ${res.status}`);
-    }
-    if (info.fallback) {
-      degraded = true;
-      const provider = userProvider();
-      if (provider) {
-        try {
-          const withModel = {
-            ...provider,
-            model: provider.model || (await detectModel(provider)),
-          };
-          const payload = await step.upgradeFrom(info, withModel, data.language);
-          const res2 = await fetch(step.path, {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ id: data.id, ...payload }),
-          });
-          if (res2.ok) {
-            degraded = false;
-          }
-        } catch {
-          // fallback stays, the part is still usable
-        }
-      }
-    }
-  }
-
-  /* fallback generated without an LLM — try the user's own api */
-  async function upgradePoints(info, provider, language) {
-    const sources = info.sentences || [];
+  /* deterministic parts → repaired through the user's own LLM after done */
+  async function upgradePoints(provider, language) {
+    const sources = data.upgrades.sentences || [];
     const reformulated = await Promise.all(
       sources.map(async (sentence) => {
         const prompt = reformulatePrompt(sentence, language);
@@ -73,16 +38,25 @@
       }),
     );
     const points = reformulated.map((point, index) => point ?? sources[index]);
-    return { order: { points } };
+    const res = await fetch("/api/test/order", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id: data.id, order: { points } }),
+    });
+    return res.ok;
   }
 
-  async function upgradeEvents(info, provider, language) {
-    const facts = await fetchFacts(provider, info.text, language, 240000);
-    return { events: validateEvents(facts) };
+  async function upgradeEvents(provider, language) {
+    const facts = await fetchFacts(provider, data.upgrades.text, language, 240000);
+    const events = validateEvents(facts);
+    const res = await fetch("/api/test/events", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id: data.id, events }),
+    });
+    return res.ok;
   }
 
-  /* A user's own LLM API lives in this browser — generation through it
-     happens only here, never on the site server. */
   function userProvider() {
     try {
       const saved = JSON.parse(localStorage.getItem("nt.user_llm") || "null");
@@ -92,57 +66,125 @@
     }
   }
 
-  const STEP_DEFS = [
-    { label: "preparing text", builtIn: true },
-    {
-      label: "preparing test part 1",
-      path: "/api/test/order",
-      upgradeFrom: upgradePoints,
-    },
-    {
-      label: "preparing test part 2",
-      path: "/api/test/events",
-      upgradeFrom: upgradeEvents,
-    },
-    { label: "saving", builtIn: true },
-  ];
+  /* fallback generated without an LLM → try the user's own api */
+  async function polish() {
+    if (!stages.some((stage) => stage.done && stage.fallback)) {
+      return;
+    }
+    const provider = userProvider();
+    if (!provider) {
+      return;
+    }
+    try {
+      const equipped = {
+        ...provider,
+        model: provider.model || (await detectModel(provider)),
+      };
+      const jobs = [];
+      const orderStage = stages.find((stage) => stage.key === "order");
+      const eventsStage = stages.find((stage) => stage.key === "events");
+      if (orderStage?.fallback) {
+        jobs.push(upgradePoints(equipped, data.language).catch(() => false));
+      }
+      if (eventsStage?.fallback) {
+        jobs.push(upgradeEvents(equipped, data.language).catch(() => false));
+      }
+      const results = await Promise.all(jobs);
+      if (results.every(Boolean)) {
+        degraded = false;
+      }
+    } catch {
+      // fallback stays, the parts are still usable
+    }
+  }
 
   let state = $state("building");
   let notice = $state("");
   let degraded = $state(false);
-  let done = $state({});
+  let stages = $state([]);
   let confirmed = $state(false);
+  let timer;
 
-  async function build() {
-    state = "building";
-    notice = "";
-    for (const step of STEP_DEFS) {
+  /* green fills of the bar follow the per-part readiness */
+  let percent = $derived(
+    stages.length
+      ? Math.max(
+          4,
+          Math.round((100 * stages.filter((stage) => stage.done).length) / stages.length),
+        )
+      : 4,
+  );
+
+  function apply(progress) {
+    stages = progress.stages;
+    degraded = progress.stages.some((stage) => stage.done && stage.fallback);
+  }
+
+  function poll() {
+    timer = setTimeout(async () => {
       try {
-        // text and saving run inside the create action / part requests
-        if (!step.path) {
-          done = { ...done, [step.label]: true };
-          continue;
+        const res = await fetch(`/api/test/progress?id=${encodeURIComponent(data.id)}`);
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
         }
-        await buildPart(step);
-        done = { ...done, [step.label]: true };
+        const progress = await res.json();
+        apply(progress);
+        if (progress.state === "building") {
+          poll();
+          return;
+        }
+        if (progress.state === "error") {
+          notice = progress.error || "Generation failed";
+          state = "error";
+          return;
+        }
+        state = "done";
+        polish();
       } catch (error) {
         notice = error.message;
         state = "error";
-        return;
       }
-    }
-    state = "done";
+    }, 900);
   }
 
-  $effect(() => {
-    if (state === "building" && !done["saving"]) {
-      build();
+  async function start() {
+    clearTimeout(timer);
+    state = "building";
+    notice = "";
+    confirmed = false;
+    try {
+      const res = await fetch("/api/test/build", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id: data.id }),
+      });
+      const progress = await res.json();
+      if (!res.ok) {
+        throw new Error(progress.error || `HTTP ${res.status}`);
+      }
+      apply(progress);
+      if (progress.state === "building") {
+        poll();
+        return;
+      }
+      if (progress.state === "error") {
+        notice = progress.error || "Generation failed";
+        state = "error";
+        return;
+      }
+      state = "done";
+      polish();
+    } catch (error) {
+      notice = error.message;
+      state = "error";
     }
-  });
+  }
+
+  onMount(start);
+  onDestroy(() => clearTimeout(timer));
 
   function retry() {
-    done = {};
-    state = "building";
+    start();
   }
 
   async function drop() {
@@ -164,25 +206,8 @@
   <div class="card">
     <h1>{data.title}</h1>
 
-    {#if state === "building"}
-      <p class="status">Working on the document…</p>
-      {#each STEP_DEFS as step}
-        <p class="setup-step" class:done={done[step.label]}>
-          {done[step.label] ? "✓" : "…"} {step.label}
-        </p>
-      {/each}
-      {#if degraded}
-        <p class="muted">
-          Generated without an LLM — set your API in Settings for real sentences
-        </p>
-      {/if}
-    {:else if state === "error"}
-      <p class="status error" role="alert">{notice}</p>
-      <div class="actions">
-        <button class="btn" type="button" onclick={retry}>Retry</button>
-      </div>
-    {:else}
-      <p class="muted">Document is ready:</p>
+    {#if state === "done"}
+      <p class="muted">Test is ready:</p>
 
       <div class="options">
         <a class="btn primary" href="/doc/{data.id}/test/review">Review</a>
@@ -192,6 +217,31 @@
           {confirmed ? "Delete — click again to confirm" : "Delete"}
         </button>
       </div>
+
+      {#if degraded}
+        <p class="muted small">
+          Some parts were generated without an LLM — set your API in Settings for
+          richer sentences
+        </p>
+      {/if}
+    {:else if state === "error"}
+      <div class="bar error"><div class="bar-fill" style:width="100%"></div></div>
+      <p class="status error" role="alert">{notice}</p>
+      <div class="actions">
+        <button class="btn" type="button" onclick={retry}>Retry</button>
+      </div>
+    {:else}
+      <p class="status">Building the test…</p>
+
+      <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow={percent}>
+        <div class="bar-fill" style:width="{percent}%"></div>
+      </div>
+
+      {#each stages as stage}
+        <p class="setup-step" class:done={stage.done}>
+          {stage.done ? "✓" : "…"} {stage.label}
+        </p>
+      {/each}
     {/if}
   </div>
 </main>

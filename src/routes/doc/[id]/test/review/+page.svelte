@@ -1,10 +1,11 @@
 <script>
   let { data } = $props();
 
-  /* Review: every point in its true order and every event with its
-     answer — a part looks wrong? regenerate it. */
+  /* Review: every part with its answers — a part looks wrong? regenerate it. */
   let order = $state(data.order);
   let events = $state(data.events);
+  let questions = $state(data.questions);
+  let arrange = $state(data.arrange);
   let status = $state("");
   let notice = $state("");
 
@@ -17,7 +18,7 @@
     }
   }
 
-  async function regenerate(endpoint, stateKey) {
+  async function regenerate(endpoint) {
     status = endpoint;
     notice = "";
     try {
@@ -30,10 +31,14 @@
       if (!res.ok) {
         throw new Error(info.error || `HTTP ${res.status}`);
       }
-      if (stateKey === "order") {
+      if (endpoint === "order") {
         order = info;
-      } else {
+      } else if (endpoint === "events") {
         events = info;
+      } else if (endpoint === "questions") {
+        questions = info;
+      } else {
+        arrange = info;
       }
     } catch (error) {
       notice = error.message;
@@ -66,12 +71,12 @@
         </div>
       {/each}
       <div class="actions">
-        <button class="btn" type="button" disabled={status === "order"} onclick={() => regenerate("order", "order")}>
+        <button class="btn" type="button" disabled={status === "order"} onclick={() => regenerate("order")}>
           {status === "order" ? "Regenerating contributions…" : "Regenerate part 1"}
         </button>
       </div>
     </div>
-  {:else if !events?.true?.length}
+  {:else if !events?.true?.length && !questions?.items?.length && !arrange?.items?.length}
     <div class="card">
       <h1>{data.title}</h1>
       <p class="status">Nothing to review yet — the test builds during processing.</p>
@@ -94,8 +99,47 @@
         </div>
       {/each}
       <div class="actions">
-        <button class="btn" type="button" disabled={status === "events"} onclick={() => regenerate("events", "events")}>
+        <button class="btn" type="button" disabled={status === "events"} onclick={() => regenerate("events")}>
           {status === "events" ? "Regenerating events…" : "Regenerate part 2"}
+        </button>
+      </div>
+    </div>
+  {/if}
+
+  {#if questions?.items?.length}
+    <div class="card">
+      <p class="muted quiz-meta">Part 3 · questions with answers · {questions.created} · {questions.source}</p>
+      {#each questions.items as item, i}
+        <div class="quiz-q">
+          <strong>Question {i + 1}</strong>
+          <p class="q-text">{item.question}</p>
+          {#each item.choices as choice, j}
+            <p class="opt" class:answer-ok={j === item.answer}>{choice}</p>
+          {/each}
+        </div>
+      {/each}
+      <div class="actions">
+        <button class="btn" type="button" disabled={status === "questions"} onclick={() => regenerate("questions")}>
+          {status === "questions" ? "Regenerating questions…" : "Regenerate part 3"}
+        </button>
+      </div>
+    </div>
+  {/if}
+
+  {#if arrange?.items?.length}
+    <div class="card">
+      <p class="muted quiz-meta">Part 4 · sentences with translations · {arrange.created} · {arrange.source}</p>
+      {#each arrange.items as item}
+        <div class="quiz-q">
+          <p class="q-text">{item.sentence}</p>
+          {#if item.translation}
+            <p class="arrange-transl muted">{item.translation}</p>
+          {/if}
+        </div>
+      {/each}
+      <div class="actions">
+        <button class="btn" type="button" disabled={status === "arrange"} onclick={() => regenerate("arrange")}>
+          {status === "arrange" ? "Regenerating sentences…" : "Regenerate part 4"}
         </button>
       </div>
     </div>

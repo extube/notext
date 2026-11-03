@@ -1,22 +1,15 @@
 import { json } from "@sveltejs/kit";
 import {
-  GENERATE_TIMEOUT_MS,
   docText,
   loadParsedDoc,
   nowCreated,
   readRequest,
   readScore,
-  siteModelProvider,
   spreadSentences,
   storeEntry,
 } from "$lib/server/testpart.js";
-import {
-  chatCall,
-  cleanReformulation,
-  reformulatePrompt,
-  usableReformulation,
-  validatePoints,
-} from "$lib/llm.js";
+import { generateOrder } from "$lib/server/testgen.js";
+import { validatePoints } from "$lib/llm.js";
 
 export async function POST({ request, url }) {
   const { body, id, regenerate } = await readRequest(request, url);
@@ -64,61 +57,16 @@ export async function POST({ request, url }) {
     return json(existing);
   }
 
-  let entry;
-  // 6 sentences picked programmatically across the text, in text order;
-  // each one goes through its own "rephrase it" request
-  const sources = spreadSentences(doc);
-  if (sources.length < 2) {
-    return json({ error: "Text is too short for the order part" }, { status: 500 });
-  }
-  let points = sources;
   try {
-    const provider = await siteModelProvider();
-    const reformulated = await Promise.all(
-      sources.map(async (sentence) => {
-        const prompt = reformulatePrompt(sentence, doc.language);
-        const raw = await chatCall(
-          provider,
-          prompt.system,
-          prompt.user,
-          GENERATE_TIMEOUT_MS,
-          300,
-        ).catch(() => null);
-        const cleaned = raw === null ? null : cleanReformulation(raw);
-        return cleaned && usableReformulation(sentence, cleaned) ? cleaned : null;
-      }),
-    );
-    if (reformulated.some(Boolean)) {
-      points = reformulated.map((point, index) => point ?? sources[index]);
-      entry = {
-        part: "order",
-        source: provider.model,
-        created: nowCreated(),
-        points,
-      };
-    } else {
-      // no usable reformulation: original sentences, still in true order
-      entry = {
-        part: "order",
-        source: "deterministic",
-        created: nowCreated(),
-        points,
-      };
-    }
+    const entry = await generateOrder(doc);
+    storeEntry(id, doc, "order", entry);
+    return json({
+      ...entry,
+      fallback: entry.source === "deterministic",
+      text: docText(doc),
+      sentences: spreadSentences(doc),
+    });
   } catch (error) {
-    console.error(`order generation failed: ${error.message}`);
-    entry = {
-      part: "order",
-      source: "deterministic",
-      created: nowCreated(),
-      points,
-    };
+    return json({ error: error.message }, { status: 500 });
   }
-  storeEntry(id, doc, "order", entry);
-  return json({
-    ...entry,
-    fallback: entry.source === "deterministic",
-    text: docText(doc),
-    sentences: sources,
-  });
 }

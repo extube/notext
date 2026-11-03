@@ -108,7 +108,7 @@ export function listDocs() {
     try {
       const doc = JSON.parse(fs.readFileSync(path.join(DATA_DIR, entry), "utf8"));
       const test = doc.test || {};
-      const percents = [test.order, test.events]
+      const percents = [test.order, test.events, test.questions, test.arrange]
         .map((part) =>
           part?.score && part.score.total
             ? (100 * part.score.correct) / part.score.total
