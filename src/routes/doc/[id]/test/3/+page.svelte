@@ -40,7 +40,14 @@
   }
 
   function solveAgain() {
-    deal();
+    if (graded && graded.score >= graded.total) {
+      deal();
+      return;
+    }
+    // after a try with errors the previous choices stay in place — the
+    // user only switches the answers that were wrong
+    graded = null;
+    status = "answering";
   }
 </script>
 

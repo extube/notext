@@ -160,10 +160,14 @@ export function eventsTruePrompt(text, language) {
   const system =
     `You read a text and answer in PLAIN TEXT only — no JSON, no markdown, ` +
     `no numbering, no bullet points, no comments about the task. Write 8 ` +
-    `self-contained sentences, each stating an event or detail that IS in the ` +
-    `text below, keeping the order of the text. Each sentence ends with a ` +
-    `period and stands on its own. Write everything in ${LANGUAGE} — the ` +
-    `language of the text itself, never translate it.`;
+    `self-contained sentences about the TOPICS of the text below: each ` +
+    `sentence expresses one main theme or idea of the text in your own ` +
+    `words — never quote or lightly reword a single sentence of the text, ` +
+    `instead say what the text is broadly about. Keep the order in which ` +
+    `the topics appear. Every sentence is short and simple — at most 12 ` +
+    `words. Each sentence ends with a period and stands on its ` +
+    `own. Write everything in ${LANGUAGE} — the language of the text ` +
+    `itself, never translate it.`;
   const user = `Text:\n\n${text}`;
   return { system, user };
 }
@@ -173,12 +177,29 @@ export function eventsFalsePrompt(text, language) {
   const system =
     `You read a text and answer in PLAIN TEXT only — no JSON, no markdown, ` +
     `no numbering, no bullet points, no comments about the task. Write 8 ` +
-    `self-contained sentences in ${LANGUAGE}, each describing an event that the ` +
-    `characters could have lived but that the text NEVER mentions: a different ` +
-    `place they visit, a meeting with somebody absent from the text, an action ` +
-    `with an object that never appears there. Take care that every event is ` +
-    `new: do not restate, reword or negate anything the text says, and never ` +
-    `mention the task itself. Each sentence ends with a period.`;
+    `self-contained sentences in ${LANGUAGE}, each describing a whole TOPIC ` +
+    `that the text NEVER covers: an event, place, meeting or activity that ` +
+    `the text says nothing about. Every sentence is short and simple — at ` +
+    `most 12 words. Take care that every topic is new: do not ` +
+    `restate, reword or negate anything the text says, and never mention ` +
+    `the task itself. Each sentence ends with a period.`;
+  const user = `Text:\n\n${text}`;
+  return { system, user };
+}
+
+/* Order part: one summary sentence per main topic, topics keep the order
+   in which the text raises them (this order is the true answer). */
+export function orderTopicsPrompt(text, language) {
+  const LANGUAGE = NAMES[language] || "the text language";
+  const system =
+    `You read a text and reply in PLAIN TEXT only — no JSON, no markdown, ` +
+    `no numbering, no bullet points, no comments about the task. Write 5 ` +
+    `self-contained sentences, each summing up one main topic of the text ` +
+    `below in your own words — never quote a sentence of the text. Keep the ` +
+    `order in which the topics appear in the text. Every sentence is short ` +
+    `and simple — at most 12 words. Each sentence ends with ` +
+    `a period and stands on its own. Write everything in ${LANGUAGE} — the ` +
+    `language of the text itself, never translate it.`;
   const user = `Text:\n\n${text}`;
   return { system, user };
 }
@@ -251,48 +272,6 @@ export async function fetchFacts(provider, text, language, timeoutMs, maxTokens 
   return { true: truth, false: falsy };
 };
 
-export function reformulatePrompt(sentence, language) {
-  const LANGUAGE = NAMES[language] || "the text language";
-  const system =
-    `You rephrase one sentence in ${LANGUAGE}, keeping the exact meaning — ` +
-    `same event, same details, other words and order. Reply in PLAIN TEXT ` +
-    `only: just the rewritten sentence, no quotes, no markdown, no numbering, ` +
-    `no comments, nothing else.`;
-  const user = `Language: ${LANGUAGE}\nSentence: ${sentence}`;
-  return { system, user };
-}
-
-/* A reformulation answer is one standalone sentence; quotes, list markers
-   and meta lines are peeled off, unusable answers return null. */
-export function cleanReformulation(raw) {
-  let text = String(raw ?? "").replace(/```[a-z]*|```/gi, "").trim();
-  const line = text.split(/\n+/).map((part) => part.trim()).find(Boolean) || "";
-  const stripped = line
-    .replace(/^["“”»«'—–*_\d{}.]+\s*/u, "")
-    .replace(/["“”»«']$/u, "")
-    .trim();
-  return foldKey(stripped).length < 10 ? null : stripped;
-}
-
-/* A paraphrase keeps the meaning, so it should keep at least two content
-   lexemes of the source; zero shared words means the model derailed. */
-export function contentOverlap(a, b) {
-  const words = (text) =>
-    foldKey(text).split(/\s+/).filter((word) => word.length >= 4);
-  const seen = new Set(words(a));
-  let shared = 0;
-  for (const word of new Set(words(b))) {
-    if (seen.has(word)) {
-      shared += 1;
-    }
-  }
-  return shared;
-}
-
-export function usableReformulation(source, cleaned) {
-  return Boolean(cleaned) && contentOverlap(source, cleaned) >= 2;
-}
-
 export function validatePoints(obj) {
   const raw = Array.isArray(obj) ? obj : obj?.points;
   if (!Array.isArray(raw)) {
@@ -328,7 +307,8 @@ export function questionsPrompt(text, language) {
     `text itself, never translate it; each "choices" array holds exactly 4 ` +
     `options with only one correct, all four of the same kind of thing (names, ` +
     `places, objects, actions); "answer" is the zero-based index of the correct ` +
-    `option. Verify you output exactly the schema keys and nothing else.`;
+    `option. Keep the questions and the options short and simple — about 12 ` +
+    `words at most. Verify you output exactly the schema keys and nothing else.`;
   const user = `Text:\n\n${text}`;
   return { system, user };
 }
