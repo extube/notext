@@ -28,10 +28,13 @@ never render content.
 
 ### Test generation
 
-- Parts: 1 · `order` (reformulated points in true text order), 2 · `events`
-  (true/false statements), 3 · `questions` (multiple-choice questions about
-  the text), 4 · `arrange` (5 sentences + machine translations; the browser
-  scrambles the words each round).
+- Parts: 1 · `order` (4–5 topic summaries in the order the text raises
+  them), 2 · `events` (true/false statements about the text's topics; a
+  round shows exactly 3 true + 3 false), 3 · `questions` (multiple-choice
+  questions about the text), 4 · `arrange` (4–6 sentences + machine
+  translations; the browser scrambles the words each round).
+- Retrying a part keeps the user's previous answers when the last try had
+  errors (only a fully correct round deals a fresh draw).
 - Generation is an **async server-side task**: `POST /api/test/build` starts
   (or resumes) the build; `GET /api/test/progress?id=…` reports the per-stage
   readiness for the bar. Each finished part is written to the document json

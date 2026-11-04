@@ -5,6 +5,17 @@ import { joinWords } from "$lib/text.js";
 
 export const GENERATE_TIMEOUT_MS = 240000;
 
+/* Uploaded texts sometimes carry inline tag junk (e.g. citation markers
+   like `< citation src="1"></citation >`): drop it before the test parts
+   see the words, so such fragments never stand as their own sentence or
+   shift a translation list off by one. */
+export function stripTags(text) {
+  return (text || "")
+    .replace(/<\s*\/?\s*[a-z][^<>]*>/gi, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 /* Flatten the stored doc into plain text: sentences joined with spaces
    (matches what the reader shows), blank lines between parts. */
 export function docText(doc) {
@@ -15,7 +26,7 @@ export function docText(doc) {
     }
     parts.push(
       doc[key].sentences
-        .map((sentence) => joinWords(sentence.words))
+        .map((sentence) => stripTags(joinWords(sentence.words)))
         .join(" "),
     );
   }
@@ -117,19 +128,23 @@ export function docSentences(doc) {
   return out;
 }
 
-/* Order part: up to 6 sentences picked evenly across the whole text, in
-   text order — the reformulations keep that order as the true answer. */
-export function spreadSentences(doc, limit = 6) {
-  const all = docSentences(doc);
+/* Pick up to `limit` items evenly across the list, keeping their order. */
+export function spreadItems(list, limit = 6) {
   const picked = [];
-  for (let i = 0; i < limit && all.length; i++) {
-    const index = all.length <= limit
+  for (let i = 0; i < limit && list.length; i++) {
+    const index = list.length <= limit
       ? i
-      : Math.floor((i * (all.length - 1)) / (limit - 1));
-    const sentence = all[index];
-    if (sentence && !picked.includes(sentence)) {
-      picked.push(sentence);
+      : Math.floor((i * (list.length - 1)) / (limit - 1));
+    const item = list[index];
+    if (item && !picked.includes(item)) {
+      picked.push(item);
     }
   }
   return picked;
+}
+
+/* Order part: up to 6 sentences picked evenly across the whole text, in
+   text order — the reformulations keep that order as the true answer. */
+export function spreadSentences(doc, limit = 6) {
+  return spreadItems(docSentences(doc), limit);
 }

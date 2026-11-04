@@ -678,7 +678,7 @@ textarea {
   color: var(--accent);
 }
 
-/* arrange part: word chips with tiny reorder arrows */
+/* arrange part: word chips, caught words drag with the cursor */
 .arrange-words {
   display: flex;
   flex-wrap: wrap;
@@ -691,14 +691,51 @@ textarea {
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 6px;
+  cursor: grab;
   display: inline-flex;
   gap: 0.3rem;
-  padding: 0.15rem 0.3rem 0.15rem 0.55rem;
+  padding: 0.15rem 0.55rem;
+  touch-action: none;
+  user-select: none;
 }
 
-.arrange-word .order-btn {
-  font-size: 0.7rem;
-  padding: 0.05rem 0.3rem;
+/* dashed hole where the caught word will land */
+.arrange-word.arrange-ghost {
+  background: transparent;
+  border-style: dashed;
+  color: transparent;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* summary: word in its right slot (green) / wrong slot (red) */
+.arrange-word.order-ok {
+  border-color: var(--accent);
+  color: var(--accent);
+  cursor: default;
+  pointer-events: none;
+}
+
+.arrange-word.order-bad {
+  border-color: rgb(224 90 90);
+  color: rgb(224 120 120);
+  cursor: default;
+  pointer-events: none;
+}
+
+/* the caught word, floating under the cursor */
+.arrange-word.drag-ghost {
+  color: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+  cursor: default;
+  display: inline-flex;
+  left: 0;
+  pointer-events: none;
+  position: fixed;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  z-index: 40;
 }
 
 /* arrange part: translation under the sentence */

@@ -4,7 +4,7 @@
   let { data } = $props();
 
   /* Everything was built once by the test menu and comes from load();
-     a round takes 6 statements with a random mix of true/false items. */
+     a round takes exactly 3 true and 3 false statements. */
   let entry = $state(data.entry);
   let status = $state("answering");
   let items = $state([]);
@@ -19,21 +19,27 @@
     return list;
   }
 
+  function sample(list, count) {
+    const pool = [...list];
+    const out = [];
+    while (out.length < count && pool.length) {
+      out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+    }
+    return out;
+  }
+
   function deal() {
     const truth = entry.true;
     // stored entries from an older generation may hold the same sentence on
     // both sides — those must not end up in one round with two answers
     const falsy = entry.false.filter((f) => !truth.some((t) => nearDuplicate(t, f)));
-    // 6 statements with a random number of true ones — at least one of each
-    const maxTrue = Math.min(5, truth.length);
-    const minTrue = Math.max(1, 6 - falsy.length);
-    const trueN = minTrue > maxTrue
-      ? maxTrue
-      : minTrue + Math.floor(Math.random() * (maxTrue - minTrue + 1));
-    const falseN = Math.min(6 - trueN, falsy.length);
+    // every round shows exactly 3 true and 3 false statements (a stored
+    // entry always holds at least 2 of each — the pool sizes then win)
+    const trueN = Math.min(3, truth.length);
+    const falseN = Math.min(3, falsy.length);
     items = shuffle([
-      ...truth.slice(0, trueN).map((text) => ({ text, isTrue: true })),
-      ...falsy.slice(0, falseN).map((text) => ({ text, isTrue: false })),
+      ...sample(truth, trueN).map((text) => ({ text, isTrue: true })),
+      ...sample(falsy, falseN).map((text) => ({ text, isTrue: false })),
     ]);
     picked = items.map(() => null);
     graded = null;
@@ -47,7 +53,14 @@
   });
 
   function solveAgain() {
-    deal();
+    if (graded && graded.score >= graded.total) {
+      deal();
+      return;
+    }
+    // after a try with errors the previous picks stay in place — the user
+    // only switches the statements that were wrong
+    graded = null;
+    status = "answering";
   }
 
   function submit() {

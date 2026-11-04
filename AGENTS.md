@@ -100,14 +100,18 @@ Parsing output is a JSON object consumed by the learning workflow:
 - Documents may also carry a `test` block (optional, built by the async task
   on `/process/<id>`, one part per stage of a green progress bar — a page
   reload lands on the same stage):
-  `order: { part, source, created, points[] }` (points in true text order,
-  shuffling happens client-side), `events: { part, source, created,
-  true[6], false[6] }` (a round shows 6 statements with a random true/false
-  mix), `questions: { part, source, created, items[] }` (multiple-choice
+  `order: { part, source, created, points[] }` (4–5 topic summaries in the
+  order the text raises them, shuffling happens client-side),
+  `events: { part, source, created,
+  true[6], false[6] }` (topic-based statements; a round shows exactly
+  3 true + 3 false, sampled from the pool), `questions: { part, source,
+  created, items[] }` (multiple-choice
   questions about the text: `{ question, choices[4], answer (0-based) }`)
   and `arrange: { part, source, created, items[] }`
-  (`{ sentence, translation }` — 5 sentences; the browser scrambles the
+  (`{ sentence, translation }` — 4–6 short sentences; the browser scrambles the
   words each round and shows the translation under the sentence);
+  retrying a part keeps the previous answers when the last try had errors
+  (a fully correct round deals a fresh draw);
   parts are stored into the doc json as soon as each is ready — part pages
   only open what is stored; each entry may carry `score: { correct, total }`
   (last solved round, posted to the part endpoint after checking; shown as a

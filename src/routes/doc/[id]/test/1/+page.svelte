@@ -37,7 +37,14 @@
   });
 
   function solveAgain() {
-    deal();
+    if (graded && graded.score >= graded.total) {
+      deal();
+      return;
+    }
+    // after a try with errors the previous arrangement stays in place —
+    // the user only moves the points that were wrong
+    graded = null;
+    status = "answering";
   }
 
   function move(index, delta) {
@@ -91,7 +98,7 @@
     <h1>{data.title}</h1>
 
     {#if entry}
-      <p class="muted quiz-meta">Put the points back into the text order · {entry.created} · {entry.source}</p>
+      <p class="muted quiz-meta">Put the topic summaries back into the text order · {entry.created} · {entry.source}</p>
 
       {#if graded}
         {#each graded.results as result, i}

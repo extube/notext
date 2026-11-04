@@ -4,11 +4,10 @@
   import { rememberDoc } from "$lib/browser.js";
   import {
     chatCall,
-    cleanReformulation,
     detectModel,
     fetchFacts,
-    reformulatePrompt,
-    usableReformulation,
+    orderTopicsPrompt,
+    splitFacts,
     validateEvents,
   } from "$lib/llm.js";
 
@@ -22,22 +21,12 @@
 
   /* deterministic parts → repaired through the user's own LLM after done */
   async function upgradePoints(provider, language) {
-    const sources = data.upgrades.sentences || [];
-    const reformulated = await Promise.all(
-      sources.map(async (sentence) => {
-        const prompt = reformulatePrompt(sentence, language);
-        const raw = await chatCall(
-          provider,
-          prompt.system,
-          prompt.user,
-          240000,
-          300,
-        ).catch(() => null);
-        const cleaned = raw === null ? null : cleanReformulation(raw);
-        return cleaned && usableReformulation(sentence, cleaned) ? cleaned : null;
-      }),
-    );
-    const points = reformulated.map((point, index) => point ?? sources[index]);
+    const prompt = orderTopicsPrompt(data.upgrades.text || "", language);
+    const raw = await chatCall(provider, prompt.system, prompt.user, 240000, 800);
+    const points = splitFacts(raw, 5);
+    if (points.length < 4) {
+      return false;
+    }
     const res = await fetch("/api/test/order", {
       method: "POST",
       headers: { "content-type": "application/json" },

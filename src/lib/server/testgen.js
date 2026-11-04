@@ -13,20 +13,20 @@ import {
   loadParsedDoc,
   nowCreated,
   siteModelProvider,
+  spreadItems,
   spreadSentences,
   storeEntry,
 } from "$lib/server/testpart.js";
 import {
   chatCall,
-  cleanReformulation,
   fetchFacts,
   foldKey,
+  orderTopicsPrompt,
   parseLooseJson,
   questionsPrompt,
-  reformulatePrompt,
   salvageJsonText,
+  splitFacts,
   translateLinesPrompt,
-  usableReformulation,
   validateEvents,
   validateQuestions,
   validateTranslations,
@@ -107,47 +107,37 @@ function recombined(sentence, other, taken) {
   return null;
 }
 
-/* ---- part 1 · order: reformulated points in true text order ---- */
+/* ---- part 1 · order: topic summaries in the order the text raises them ---- */
 
 export async function generateOrder(doc) {
   const sources = spreadSentences(doc);
-  if (sources.length < 2) {
+  if (sources.length < 4) {
     throw new Error("Text is too short for the order part");
   }
-  const points = sources;
-  try {
-    const provider = await siteModelProvider();
-    const reformulated = await Promise.all(
-      sources.map(async (sentence) => {
-        const prompt = reformulatePrompt(sentence, doc.language);
-        const raw = await chatCall(
-          provider,
-          prompt.system,
-          prompt.user,
-          GENERATE_TIMEOUT_MS,
-          300,
-        ).catch(() => null);
-        const cleaned = raw === null ? null : cleanReformulation(raw);
-        return cleaned && usableReformulation(sentence, cleaned) ? cleaned : null;
-      }),
-    );
-    if (reformulated.some(Boolean)) {
-      return {
-        part: "order",
-        source: provider.model,
-        created: nowCreated(),
-        points: reformulated.map((point, index) => point ?? sources[index]),
-      };
-    }
-  } catch (error) {
-    console.error(`order generation failed: ${error.message}`);
-  }
-  return {
+  const fallback = () => ({
     part: "order",
     source: "deterministic",
     created: nowCreated(),
-    points,
-  };
+    points: spreadSentences(doc, 5),
+  });
+  try {
+    const provider = await siteModelProvider();
+    const prompt = orderTopicsPrompt(docText(doc), doc.language);
+    const raw = await chatCall(provider, prompt.system, prompt.user, GENERATE_TIMEOUT_MS, 800);
+    const points = splitFacts(raw, 5);
+    if (points.length < 4) {
+      throw new Error("Model did not provide enough topic summaries");
+    }
+    return {
+      part: "order",
+      source: provider.model,
+      created: nowCreated(),
+      points: points.slice(0, 5),
+    };
+  } catch (error) {
+    console.error(`order generation failed: ${error.message}`);
+  }
+  return fallback();
 }
 
 /* ---- part 2 · events: true facts from the text + invented ones ---- */
@@ -308,8 +298,17 @@ function blankQuestions(doc, limit) {
 /* ---- part 4 · arrange: sentences split into scrambled words ---- */
 
 export async function generateArrangement(doc) {
-  const sentences = spreadSentences(doc, 5);
-  if (sentences.length < 2) {
+  // short sentences (≤ 12 words) make the arrange part playable — take up
+  // to 6 of them evenly across the text; when the text holds fewer than
+  // 4 short ones, fill up with the longer sentences still left over
+  const all = docSentences(doc);
+  const short = all.filter((sentence) => sentence.split(/\s+/).length <= 12);
+  const long = all.filter((sentence) => sentence.split(/\s+/).length > 12);
+  let sentences = spreadItems(short, 6);
+  if (sentences.length < 4) {
+    sentences = [...short, ...spreadItems(long, 4 - short.length)];
+  }
+  if (sentences.length < 4) {
     throw new Error("Text is too short for the arrange part");
   }
   try {
